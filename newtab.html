@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Tab</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/themes.css">
+</head>
+<body class="theme-light">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="search-wrapper">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="search" id="searchInput" class="search-input" placeholder="Search sites..." autocomplete="off" autocorrect="off" spellcheck="false">
+        <button id="clearSearch" class="clear-search" title="Clear search" aria-label="Clear search" hidden>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div id="workspaceSelector" class="workspace-selector">
+        <button class="workspace-selector-trigger" id="workspaceTrigger">
+          Main
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        <div class="workspace-dropdown" id="workspaceDropdown" hidden>
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+      <button id="birdsEyeToggle" class="icon-btn" title="Toggle all-workspaces view" aria-label="Toggle all-workspaces view">
+        <svg class="icon-birdseye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="5" rx="1"/>
+          <rect x="3" y="10" width="18" height="5" rx="1"/>
+          <rect x="3" y="17" width="18" height="5" rx="1"/>
+        </svg>
+      </button>
+      <div class="header-actions">
+        <a href="help.html" target="_blank" class="icon-btn help-btn" title="User Guide" aria-label="User Guide">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </a>
+        <button id="themeToggle" class="icon-btn" title="Toggle theme" aria-label="Toggle theme">
+          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+        <button id="saveAllTabsBtn" class="icon-btn" title="Save all open tabs to a new category" aria-label="Save all open tabs">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+        </button>
+        <button id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+        <button id="selectModeBtn" class="btn btn-secondary" aria-label="Enter select mode">Select</button>
+        <button id="addFromBrowserBtn" class="btn btn-secondary" aria-label="Add from tabs or bookmarks">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="4" width="20" height="16" rx="2"/>
+            <path d="M2 9h20"/>
+          </svg>
+          From Browser
+        </button>
+        <button id="addCategoryBtn" class="btn btn-primary" aria-label="Add category">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add Category
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Save indicator -->
+  <div id="saveIndicator" class="save-indicator" hidden>Saved</div>
+
+  <!-- Selection toolbar (shown in select mode) -->
+  <div id="selectionToolbar" class="selection-toolbar" role="toolbar" aria-label="Selection actions">
+    <span id="selectionCount" class="selection-count">None selected</span>
+    <div class="selection-toolbar-actions">
+      <button id="selectAllBtn" class="picker-link-btn">Select all</button>
+      <button id="clearSelectionBtn" class="picker-link-btn">Clear</button>
+      <div style="position:relative;">
+        <button id="moveSelectedBtn" class="btn btn-secondary" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+            <polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/>
+            <polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/>
+            <line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>
+          </svg>
+          Move to&hellip;
+        </button>
+      </div>
+      <button id="copyUrlsBtn" class="btn btn-secondary" disabled title="Copy selected URLs to clipboard">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          Copy URLs
+        </button>
+      <button id="consolidateSelectedBtn" class="btn btn-secondary" disabled title="Convert selected URLs to root domains and remove duplicates">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <polyline points="7.5 4.21 12 6.81 16.5 4.21"/>
+          <polyline points="7.5 19.79 7.5 14.6 3 12"/>
+          <polyline points="21 12 16.5 14.6 16.5 19.79"/>
+          <line x1="12" y1="12" x2="12" y2="22"/>
+        </svg>
+        Consolidate URLs
+      </button>
+      <button id="refreshNamesBtn" class="btn btn-secondary" disabled title="Refresh names and favicons from URLs">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+          <polyline points="23 4 23 10 17 10"/>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+        </svg>
+        Refresh Names
+      </button>
+      <button id="fetchDescriptionsBtn" class="btn btn-secondary" disabled title="Fetch meta descriptions from URLs">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        Fetch Descriptions
+      </button>
+      <button id="deleteSelectedBtn" class="btn btn-danger" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+        </svg>
+        Delete Selected
+      </button>
+    </div>
+  </div>
+
+  <!-- Move-selected floating menu (populated by JS) -->
+  <div id="moveSelectedMenu" class="context-menu move-selected-menu" hidden></div>
+
+  <!-- Main content -->
+  <main class="main-content">
+    <div id="searchEmptyState" class="empty-state" hidden>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <p>No sites match your search.</p>
+    </div>
+    <div id="emptyState" class="empty-state" hidden>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      </svg>
+      <p>No categories yet. Click <strong>Add Category</strong> to get started.</p>
+    </div>
+    <div id="backToSearchBar" class="back-to-search-bar" hidden>
+      <button id="backToSearchBtn" class="back-to-search-btn">
+        ← Back to search: "<span id="backToSearchQuery"></span>"
+      </button>
+    </div>
+    <div id="categoriesGrid" class="categories-grid"></div>
+  </main>
+
+  <!-- Context Menu -->
+  <div id="contextMenu" class="context-menu" hidden>
+    <button class="context-item" data-action="open-new-tab">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+        <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+      </svg>
+      Open in new tab
+    </button>
+    <button class="context-item" data-action="copy-url">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+      Copy URL
+    </button>
+    <button class="context-item" data-action="edit">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </svg>
+      Edit
+    </button>
+    <button class="context-item" data-action="refresh-favicon">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="23 4 23 10 17 10"/>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+      </svg>
+      Refresh favicon
+    </button>
+    <button class="context-item" data-action="fetch-description">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+      Fetch description
+    </button>
+    <button class="context-item" data-action="move">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/>
+        <polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/>
+        <line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>
+      </svg>
+      Move to category
+    </button>
+    <button class="context-item" data-action="copy">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+      Copy to category
+    </button>
+    <button class="context-item" data-action="move-to-top">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="18 15 12 9 6 15"/>
+        <line x1="12" y1="9" x2="12" y2="21"/>
+        <line x1="5" y1="3" x2="19" y2="3"/>
+      </svg>
+      Move to top
+    </button>
+    <button class="context-item" data-action="move-to-bottom">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="18 9 12 15 6 9"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+        <line x1="5" y1="21" x2="19" y2="21"/>
+      </svg>
+      Move to bottom
+    </button>
+    <div class="context-divider"></div>
+    <button class="context-item context-item--danger" data-action="delete">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+      </svg>
+      Delete
+    </button>
+  </div>
+
+  <!-- Move to Category submenu -->
+  <div id="moveMenu" class="context-menu" hidden></div>
+
+  <!-- Modal: Add/Edit Site -->
+  <div id="siteModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="siteModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="siteModalTitle" class="modal-title">Add Site</h2>
+        <button class="modal-close" data-modal="siteModal" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Type toggle (hidden in edit mode) -->
+        <div id="siteTypeToggle" class="site-type-toggle form-group">
+          <button id="typeUrlBtn" class="site-type-btn active" data-type="url">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+            URL
+          </button>
+          <button id="typeNoteBtn" class="site-type-btn" data-type="note">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Note
+          </button>
+        </div>
+
+        <!-- URL fields -->
+        <div id="siteUrlFields">
+          <div class="form-group">
+            <label for="siteUrl" class="form-label">URL <span class="required">*</span> <span class="form-hint">&mdash; one per line for bulk add</span></label>
+            <textarea id="siteUrl" class="form-input site-url-textarea" placeholder="https://example.com" rows="3" autocomplete="off" spellcheck="false"></textarea>
+            <span id="siteUrlError" class="form-error" hidden>Please enter at least one valid URL.</span>
+          </div>
+          <div id="siteNameGroup" class="form-group">
+            <label for="siteName" class="form-label">Name</label>
+            <input type="text" id="siteName" class="form-input" placeholder="Site name (auto-detected from URL)">
+          </div>
+          <div id="siteFaviconGroup" class="form-group">
+            <label for="siteFavicon" class="form-label">Custom Favicon <span class="form-hint">(optional)</span></label>
+            <div class="favicon-input-row">
+              <img id="faviconPreview" class="favicon-preview" src="" alt="" hidden>
+              <input type="url" id="siteFavicon" class="form-input" placeholder="https://example.com/favicon.ico">
+              <button type="button" id="faviconPickerToggle" class="btn btn-secondary favicon-picker-toggle">Stock icons</button>
+            </div>
+            <div id="faviconPickerGrid" class="favicon-picker-grid" hidden>
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="siteNote" class="form-label">Note <span class="form-hint">(optional)</span></label>
+            <textarea id="siteNote" class="form-input" placeholder="Add a note about this site..." rows="3" spellcheck="true"></textarea>
+          </div>
+        </div>
+
+        <!-- Note fields -->
+        <div id="siteNoteFields" hidden>
+          <div class="form-group">
+            <label for="noteLabel" class="form-label">Label <span class="form-hint">(optional)</span></label>
+            <input type="text" id="noteLabel" class="form-input" placeholder="e.g. Reminder, To-do…">
+          </div>
+          <div class="form-group">
+            <label for="noteText" class="form-label">Note <span class="required">*</span></label>
+            <textarea id="noteText" class="form-input note-textarea" placeholder="Type your note here…" rows="5" spellcheck="true"></textarea>
+            <span id="noteTextError" class="form-error" hidden>Please enter some note text.</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="siteCategorySelect" class="form-label">Category</label>
+          <select id="siteCategorySelect" class="form-select"></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-modal="siteModal">Cancel</button>
+        <button id="saveSiteBtn" class="btn btn-primary">Save Site</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add/Edit Category -->
+  <div id="categoryModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="categoryModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="categoryModalTitle" class="modal-title">Add Category</h2>
+        <button class="modal-close" data-modal="categoryModal" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="categoryName" class="form-label">Name <span class="required">*</span></label>
+          <input type="text" id="categoryName" class="form-input" placeholder="e.g. Work, Social, News" required>
+          <span id="categoryNameError" class="form-error" hidden>Please enter a category name.</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Icon</label>
+          <div class="emoji-picker">
+            <button id="selectedEmoji" class="emoji-selected" title="Click to pick emoji">📁</button>
+            <div id="emojiGrid" class="emoji-grid">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-modal="categoryModal">Cancel</button>
+        <button id="saveCategoryBtn" class="btn btn-primary">Save Category</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Settings -->
+  <div id="settingsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <div class="modal modal--wide">
+      <div class="modal-header">
+        <h2 id="settingsModalTitle" class="modal-title">Settings</h2>
+        <button class="modal-close" data-modal="settingsModal" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-section">
+          <h3 class="settings-heading">Appearance</h3>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Theme</span>
+              <small>Choose light or dark mode</small>
+            </div>
+            <div class="theme-switcher">
+              <button class="theme-option" data-theme="light">Light</button>
+              <button class="theme-option" data-theme="dark">Dark</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Columns</span>
+              <small>Number of category columns</small>
+            </div>
+            <div class="column-switcher">
+              <button class="col-option" data-cols="2">2</button>
+              <button class="col-option" data-cols="3">3</button>
+              <button class="col-option" data-cols="4">4</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Show site count</span>
+              <small>Display number of sites in each category</small>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="showSiteCount">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="settings-heading">Quick Add</h3>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Inbox category</span>
+              <small>Click the extension icon on any page to save it here</small>
+            </div>
+            <select id="quickAddInbox" class="form-select" style="max-width: 200px;"></select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="settings-heading">Data</h3>
+          <div class="settings-row settings-row--buttons">
+            <div class="settings-label">
+              <span>Export JSON</span>
+              <small>Download your data as JSON</small>
+            </div>
+            <button id="exportBtn" class="btn btn-secondary">Export JSON</button>
+          </div>
+          <div class="settings-row settings-row--buttons">
+            <div class="settings-label">
+              <span>Export HTML</span>
+              <small>Responsive page with search &amp; category toggles</small>
+            </div>
+            <button id="exportHtmlBtn" class="btn btn-secondary">Export HTML</button>
+          </div>
+          <div class="settings-row settings-row--buttons">
+            <div class="settings-label">
+              <span>Copy All URLs</span>
+              <small>Copy every URL across all workspaces to clipboard</small>
+            </div>
+            <button id="copyAllUrlsBtn" class="btn btn-secondary">Copy URLs</button>
+          </div>
+          <div class="settings-row settings-row--buttons">
+            <div class="settings-label">
+              <span>Import</span>
+              <small>Restore from a JSON backup</small>
+            </div>
+            <button id="importBtn" class="btn btn-secondary">Import</button>
+            <input type="file" id="importFile" accept=".json" hidden>
+          </div>
+          <div class="settings-row settings-row--buttons">
+            <div class="settings-label">
+              <span>Reset</span>
+              <small>Clear all data and start over</small>
+            </div>
+            <button id="resetBtn" class="btn btn-danger">Reset</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="settings-heading">About</h3>
+          <p class="settings-about">Tab Manager Pro v1.0.0 &mdash; All data is stored locally in your browser. Nothing is sent to any server.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Tab/Bookmark Picker -->
+  <div id="pickerModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="pickerModalTitle">
+    <div class="modal modal--wide">
+      <div class="modal-header">
+        <h2 id="pickerModalTitle" class="modal-title">Add from Browser</h2>
+        <button class="modal-close" data-modal="pickerModal" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Source toggle -->
+        <div class="picker-source-bar">
+          <button class="picker-source-btn active" data-source="tabs">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="M2 9h20"/>
+            </svg>
+            Open Tabs
+          </button>
+          <button class="picker-source-btn" data-source="bookmarks">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+            </svg>
+            Bookmarks
+          </button>
+        </div>
+        <!-- Folder filter (for bookmarks only) -->
+        <div class="picker-folder-wrap" style="display: none;">
+          <label for="pickerFolderSelect" class="picker-folder-label">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            Folder:
+          </label>
+          <select id="pickerFolderSelect" class="form-select picker-folder-select" style="display: none;"></select>
+        </div>
+        <!-- Filter search -->
+        <div class="picker-search-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="search" id="pickerSearch" class="picker-search" placeholder="Filter..." autocomplete="off">
+        </div>
+        <!-- Selection count and actions -->
+        <div class="picker-actions-bar">
+          <span id="pickerCount" class="picker-count">0 selected</span>
+          <div class="picker-actions-right">
+            <button id="pickerToggleSaved" class="picker-link-btn" title="Allow selecting already-saved items">
+              <span id="pickerToggleSavedText">Enable saved</span>
+            </button>
+            <button id="pickerSelectAll" class="picker-link-btn">Select all</button>
+            <button id="pickerClearAll" class="picker-link-btn">Clear</button>
+          </div>
+        </div>
+        <!-- Site list -->
+        <div id="pickerList" class="picker-list">
+          <div class="picker-empty">Loading...</div>
+        </div>
+      </div>
+      <div class="modal-footer picker-footer">
+        <div class="picker-target">
+          <label for="pickerCategorySelect" class="picker-target-label">Add to:</label>
+          <select id="pickerCategorySelect" class="form-select picker-cat-select"></select>
+        </div>
+        <div class="picker-footer-btns">
+          <button class="btn btn-secondary" data-modal="pickerModal">Cancel</button>
+          <button id="pickerAddBtn" class="btn btn-primary" disabled>Add Selected</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Dialog -->
+  <div id="confirmDialog" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal modal--sm">
+      <div class="modal-header">
+        <h2 id="confirmTitle" class="modal-title">Confirm</h2>
+      </div>
+      <div class="modal-body">
+        <p id="confirmMessage"></p>
+      </div>
+      <div class="modal-footer">
+        <button id="confirmCancel" class="btn btn-secondary">Cancel</button>
+        <button id="confirmOk" class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Undo toast notification -->
+  <div id="undoToast" class="undo-toast"></div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/dragdrop.js"></script>
+  <script src="js/undo.js"></script>
+  <script src="js/newtab.js"></script>
+</body>
+</html>

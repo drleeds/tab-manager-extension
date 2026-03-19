@@ -1,0 +1,77 @@
+/* =========================================================
+   Tab Manager Pro - Theme Variables
+   ========================================================= */
+
+/* ---- Light Theme ---- */
+.theme-light {
+  color-scheme: light;
+
+  --bg:             #f0f2f5;
+  --bg-header:      rgba(240, 242, 245, 0.9);
+  --bg-card:        #ffffff;
+  --bg-modal:       #ffffff;
+  --bg-popup:       #ffffff;
+  --bg-input:       #ffffff;
+  --bg-btn:         #ffffff;
+  --bg-btn-hover:   #f5f5f5;
+  --bg-hover:       #f0f2f5;
+  --bg-badge:       #f0f2f5;
+  --bg-accent-soft: #eef3fe;
+
+  --text:           #1a1a2e;
+  --text-secondary: #3d3d5c;
+  --text-muted:     #888899;
+
+  --border:         #e0e2e8;
+  --border-subtle:  #ebebf0;
+
+  --accent:         #4285f4;
+  --accent-hover:   #3070e0;
+  --accent-bg:      #eef3fe;
+  --accent-ring:    rgba(66, 133, 244, 0.18);
+
+  --danger:         #e53935;
+  --danger-hover:   #c62828;
+  --danger-bg:      #fff0f0;
+
+  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-popup:      0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-modal:      0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+/* ---- Dark Theme ---- */
+.theme-dark {
+  color-scheme: dark;
+
+  --bg:             #111318;
+  --bg-header:      rgba(17, 19, 24, 0.9);
+  --bg-card:        #1e2028;
+  --bg-modal:       #1e2028;
+  --bg-popup:       #252830;
+  --bg-input:       #252830;
+  --bg-btn:         #252830;
+  --bg-btn-hover:   #2e3240;
+  --bg-hover:       #252830;
+  --bg-badge:       #2a2d38;
+  --bg-accent-soft: #1c2340;
+
+  --text:           #e8eaf0;
+  --text-secondary: #b0b4c8;
+  --text-muted:     #666880;
+
+  --border:         #2e3240;
+  --border-subtle:  #252830;
+
+  --accent:         #5b9cf6;
+  --accent-hover:   #4a8be0;
+  --accent-bg:      #1c2340;
+  --accent-ring:    rgba(91, 156, 246, 0.22);
+
+  --danger:         #f06464;
+  --danger-hover:   #e04545;
+  --danger-bg:      #2a1a1a;
+
+  --shadow-card-hover: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-popup:      0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-modal:      0 20px 60px rgba(0, 0, 0, 0.55);
+}

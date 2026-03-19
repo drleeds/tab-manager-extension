@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tab Manager Pro - User Guide</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      color: #1a1a2e;
+      background: #f8f9fc;
+    }
+
+    /* ----- Top nav ----- */
+    .top-bar {
+      position: sticky; top: 0; z-index: 100;
+      background: #fff; border-bottom: 1px solid #e2e6ee;
+      padding: 12px 32px;
+      display: flex; align-items: center; gap: 24px;
+    }
+    .top-bar h1 { font-size: 18px; font-weight: 700; white-space: nowrap; }
+    .top-bar nav { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; }
+    .top-bar nav a { color: #4361ee; text-decoration: none; }
+    .top-bar nav a:hover { text-decoration: underline; }
+
+    /* ----- Layout ----- */
+    .container { max-width: 920px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    h2 {
+      font-size: 26px; font-weight: 700; margin: 48px 0 12px;
+      padding-bottom: 8px; border-bottom: 2px solid #4361ee;
+      color: #16213e;
+    }
+    h3 { font-size: 20px; font-weight: 600; margin: 32px 0 8px; color: #1a1a2e; }
+    h4 { font-size: 17px; font-weight: 600; margin: 24px 0 6px; color: #333; }
+
+    p, li { margin-bottom: 8px; }
+    ul, ol { padding-left: 24px; margin-bottom: 16px; }
+
+    /* ----- Images ----- */
+    .img-wrap {
+      margin: 20px 0 28px;
+      border: 1px solid #dde1ea;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .img-wrap img {
+      display: block; width: 100%; height: auto;
+    }
+    .img-caption {
+      padding: 10px 16px;
+      font-size: 14px; color: #555;
+      background: #f4f5f9;
+      border-top: 1px solid #eaedf3;
+    }
+
+    /* Small inline images (zoomed-in controls) */
+    .img-wrap.small { max-width: 420px; }
+
+    /* ----- Keyboard shortcut styling ----- */
+    kbd {
+      display: inline-block;
+      padding: 2px 7px;
+      font-size: 13px;
+      font-family: SFMono-Regular, Menlo, monospace;
+      background: #f0f1f4;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 1px 0 #bbb;
+    }
+
+    /* ----- Tip boxes ----- */
+    .tip {
+      margin: 16px 0;
+      padding: 14px 18px;
+      background: #eef4ff;
+      border-left: 4px solid #4361ee;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+    .tip strong { color: #4361ee; }
+
+    /* ----- Back-to-top ----- */
+    .back-top {
+      display: inline-block; margin-top: 8px;
+      font-size: 13px; color: #4361ee; text-decoration: none;
+    }
+    .back-top:hover { text-decoration: underline; }
+
+    /* ----- Responsive ----- */
+    @media (max-width: 640px) {
+      .top-bar { flex-direction: column; align-items: flex-start; padding: 12px 16px; }
+      .container { padding: 24px 14px 60px; }
+      h2 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ==================== TOP BAR ==================== -->
+<div class="top-bar">
+  <h1>Tab Manager Pro &mdash; User Guide</h1>
+  <nav>
+    <a href="#overview">Overview</a>
+    <a href="#header">Header &amp; Controls</a>
+    <a href="#categories">Categories</a>
+    <a href="#sites">Sites</a>
+    <a href="#context-menu">Right-Click Menu</a>
+    <a href="#select-mode">Select Mode</a>
+    <a href="#workspaces">Workspaces</a>
+    <a href="#add-browser">Add from Browser</a>
+    <a href="#settings">Settings</a>
+    <a href="#keyboard">Keyboard Shortcuts</a>
+  </nav>
+</div>
+
+<div class="container">
+
+<!-- ==================== OVERVIEW ==================== -->
+<h2 id="overview">Overview</h2>
+<p>
+  Tab Manager Pro replaces your browser's new-tab page with a powerful, customizable dashboard.
+  Organize your favorite sites into <strong>categories</strong> displayed as a Kanban-style column layout,
+  group categories into <strong>workspaces</strong>, and quickly access everything with search, keyboard shortcuts, and bulk operations.
+</p>
+<p>The extension works on Chrome (and Chromium-based browsers like Edge and Brave) on both macOS and Windows.</p>
+
+<div class="img-wrap">
+  <img src="images/markuphero-69a0af2b7d74e6bc256fc10e.jpg" alt="Main interface overview">
+  <div class="img-caption">The main Tab Manager Pro interface showing categories arranged in columns, each containing a list of saved sites with favicons.</div>
+</div>
+
+<a class="back-top" href="#overview">&uarr; back to top</a>
+
+<!-- ==================== HEADER ==================== -->
+<h2 id="header">Header &amp; Controls</h2>
+<p>The header bar across the top of the page contains the primary controls for navigating and managing your dashboard.</p>
+
+<h3>Search</h3>
+<p>Type in the search box to instantly filter sites across all categories. Only matching sites and their categories will be shown.</p>
+<div class="img-wrap">
+  <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (5).jpg" alt="Search bar">
+  <div class="img-caption">The search bar (highlighted by the red arrow) lets you quickly find any saved site by name.</div>
+</div>
+
+<h3>Workspace Selector</h3>
+<p>Click the workspace name (e.g., "Tools") to open a dropdown where you can switch between workspaces, create new ones, rename, duplicate, or delete them.</p>
+<div class="img-wrap">
+  <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (6).jpg" alt="Workspace selector">
+  <div class="img-caption">The workspace selector dropdown in the header. Click it to switch workspaces or manage them.</div>
+</div>
+
+<h3>Theme Toggle</h3>
+<p>Click the sun/moon icon to switch between light and dark mode. Your preference is saved automatically.</p>
+
+<h3>Settings</h3>
+<p>Click the gear icon to open the Settings modal, where you can configure appearance, data export/import, and category visibility.</p>
+<div class="img-wrap">
+  <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (7).jpg" alt="Settings icon">
+  <div class="img-caption">The gear icon (red arrow) opens the Settings panel.</div>
+</div>
+
+<h3>Select Button</h3>
+<p>Click <strong>Select</strong> to enter selection mode, which enables bulk operations on multiple sites at once.</p>
+<div class="img-wrap">
+  <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (8).jpg" alt="Select button">
+  <div class="img-caption">The Select button enters multi-select mode for bulk operations.</div>
+</div>
+
+<h3>From Browser</h3>
+<p>Click <strong>From Browser</strong> to import sites from your currently open tabs or your Chrome bookmarks.</p>
+<div class="img-wrap">
+  <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (10).jpg" alt="From Browser button">
+  <div class="img-caption">The "From Browser" button lets you add sites from open tabs or bookmarks.</div>
+</div>
+
+<h3>+ Add Category</h3>
+<p>Click this button to create a new category in the current workspace.</p>
+<div class="img-wrap">
+  <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (11).jpg" alt="Add Category button">
+  <div class="img-caption">The "+ Add Category" button creates a new category column.</div>
+</div>
+
+<a class="back-top" href="#overview">&uarr; back to top</a>
+
+<!-- ==================== CATEGORIES ==================== -->
+<h2 id="categories">Categories</h2>
+<p>Categories are the vertical columns that contain your saved sites. Each category has a header, a list of sites, and a footer with actions.</p>
+
+<h3>Category Header</h3>
+<p>The category header shows the category name, a site count badge, and a collapse/expand chevron. Hover over the header to reveal additional controls.</p>
+
+<div class="img-wrap">
+  <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (3).jpg" alt="Category name">
+  <div class="img-caption">The category name (red arrow). Click it to rename the category.</div>
+</div>
+
+<div class="img-wrap">
+  <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (1).jpg" alt="Site count badge">
+  <div class="img-caption">The site count badge shows how many sites are in the category.</div>
+</div>
+
+<div class="img-wrap">
+  <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (2).jpg" alt="Collapse chevron">
+  <div class="img-caption">The collapse/expand chevron. Click it to collapse or expand the category's site list.</div>
+</div>
+
+<h4>Header Controls (visible on hover)</h4>
+<p>When you hover over a category header, additional controls appear:</p>
+<ul>
+  <li><strong>Drag handle</strong> (vertical dots) &mdash; Drag to reorder categories within the workspace.</li>
+  <li><strong>Sort icon</strong> (up/down arrows) &mdash; Sort the sites in this category alphabetically.</li>
+  <li><strong>Grid view icon</strong> (four squares) &mdash; Toggle between list view and grid/tile view for the category.</li>
+  <li><strong>Delete icon</strong> (trash can) &mdash; Delete the entire category and all its sites.</li>
+</ul>
+
+<div class="img-wrap small">
+  <img src="images/control_20260226155225.jpg" alt="Sort icon in category header">
+  <div class="img-caption">The sort icon (arrow) sorts sites alphabetically within the category.</div>
+</div>
+
+<div class="img-wrap small">
+  <img src="images/control_20260226155238.jpg" alt="Grid view icon">
+  <div class="img-caption">The grid view icon toggles between list and grid display modes.</div>
+</div>
+
+<div class="img-wrap small">
+  <img src="images/control_20260226155309.jpg" alt="Delete category icon">
+  <div class="img-caption">The delete icon (trash can) removes the entire category after confirmation.</div>
+</div>
+
+<h3>Category Footer</h3>
+<p>At the bottom of each category column, you'll find these actions:</p>
+
+<div class="img-wrap">
+  <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (12).jpg" alt="Add site link">
+  <div class="img-caption"><strong>+ Add site</strong> &mdash; Opens a dialog to manually add a new site by entering a URL (or multiple URLs, one per line). You can also add text notes here.</div>
+</div>
+
+<div class="img-wrap">
+  <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (13).jpg" alt="Open as tabs icon">
+  <div class="img-caption"><strong>Open as Tabs</strong> (folder icon) &mdash; Opens up to the first 12 sites as pinned tabs in your browser. Click again to close them.</div>
+</div>
+
+<div class="img-wrap">
+  <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (14).jpg" alt="Deduplicate link">
+  <div class="img-caption"><strong>Deduplicate</strong> &mdash; Removes duplicate URLs within the category.</div>
+</div>
+
+<h3>Adding a New Category</h3>
+<p>Click <strong>+ Add Category</strong> in the header to open the Add Category dialog. Enter a name and optionally choose an icon.</p>
+<div class="img-wrap">
+  <img src="images/New Tab-mh (2).jpg" alt="Add Category dialog">
+  <div class="img-caption">The Add Category dialog. Enter a name and pick an optional icon, then click "Save Category".</div>
+</div>
+
+<a class="back-top" href="#overview">&uarr; back to top</a>
+
+<!-- ==================== SITES ==================== -->
+<h2 id="sites">Sites</h2>
+<p>Each site entry in a category displays a favicon and the site name. Sites are clickable &mdash; clicking one opens it in a new tab.</p>
+
+<div class="img-wrap">
+  <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (4).jpg" alt="Site entry">
+  <div class="img-caption">A site entry showing the favicon and name. Click it to open the site in a new tab.</div>
+</div>
+
+<h3>Hovering Over a Site</h3>
+<p>When you hover over a site, a tooltip shows the full URL. You can also see a drag handle on the left side for reordering via drag and drop.</p>
+
+<div class="img-wrap small">
+  <img src="images/control_20260226155145.png" alt="Site hover with URL tooltip">
+  <div class="img-caption">Hovering over a site shows the drag handle and the full URL in a tooltip.</div>
+</div>
+
+<h3>Notes</h3>
+<p>Sites can have text notes attached to them. If a site has a note, a truncated preview appears below the site name in a smaller font. Click the preview to expand it and see the full note. Click again to collapse.</p>
+<p>You can also create standalone note tiles (without a URL) by entering only text in the "Add site" dialog without providing a URL.</p>
+
+<div class="tip">
+  <strong>Tip:</strong> URLs within notes are automatically clickable &mdash; they open in a new tab when clicked.
+</div>
+
+<h3>Adding Sites</h3>
+<p>There are several ways to add sites to a category:</p>
+<ul>
+  <li><strong>+ Add site</strong> &mdash; Click this at the bottom of any category to manually enter one or more URLs (one per line).</li>
+  <li><strong>From Browser</strong> &mdash; Import from your open tabs or bookmarks (see <a href="#add-browser">Add from Browser</a>).</li>
+  <li><strong>Quick Add (extension icon)</strong> &mdash; Click the Tab Manager Pro icon in your browser toolbar while on any page to save it to your designated inbox category.</li>
+  <li><strong>Drag and drop</strong> &mdash; Drag sites between categories to reorganize them.</li>
+</ul>
+
+<a class="back-top" href="#overview">&uarr; back to top</a>
+
+<!-- ==================== CONTEXT MENU ==================== -->
+<h2 id="context-menu">Right-Click Context Menu</h2>
+<p>Right-click on any site to access a full context menu with the following options:</p>
+
+<div class="img-wrap">
+  <img src="images/markuphero-69a0b1977d74e6bc256fc165.jpg" alt="Right-click context menu">
+  <div class="img-caption">The right-click context menu for a site, showing all available actions.</div>
+</div>
+
+<ul>
+  <li><strong>Open in new tab</strong> &mdash; Opens the site URL in a new browser tab.</li>
+  <li><strong>Copy URL</strong> &mdash; Copies the site URL to your clipboard.</li>
+  <li><strong>Edit</strong> &mdash; Opens the edit dialog to change the site's name, URL, or note.</li>
+  <li><strong>Refresh favicon</strong> &mdash; Re-fetches the site's favicon icon.</li>
+  <li><strong>Move to category</strong> &mdash; Opens a submenu to move the site to a different category.</li>
+  <li><strong>Copy to category</strong> &mdash; Opens a submenu to copy (duplicate) the site into another category.</li>
+  <li><strong>Move to top</strong> &mdash; Moves the site to the first position in the category.</li>
+  <li><strong>Move to bottom</strong> &mdash; Moves the site to the last position in the category.</li>
+  <li><strong>Delete</strong> &mdash; Removes the site from the category.</li>
+</ul>
+
+<h3>Move / Copy Submenu</h3>
+<p>When you choose "Move to category" or "Copy to category", a submenu appears listing all categories with <strong>Top</strong> and <strong>Bottom</strong> buttons to control where the site is placed. A <strong>Move / Copy</strong> radio toggle at the top lets you switch between the two modes.</p>
+
+<div class="img-wrap">
+  <img src="images/New Tab-mh (4).jpg" alt="Context menu with Move submenu">
+  <div class="img-caption">The right-click context menu with the Move/Copy submenu expanded, showing the Move/Copy radio toggle and all destination categories.</div>
+</div>
+
+<a class="back-top" href="#overview">&uarr; back to top</a>
+
+<!-- ==================== SELECT MODE ==================== -->
+<h2 id="select-mode">Select Mode</h2>
+<p>Click the <strong>Select</strong> button in the header to enter selection mode. Checkboxes appear next to every site and category, letting you select items for bulk operations.</p>
+
+<div class="img-wrap">
+  <img src="images/markuphero-69a0b3327d74e6bc256fc1a2.jpg" alt="Select mode">
+  <div class="img-caption">Select mode activated. Checkboxes appear next to each site and category. The toolbar shows the number of selected items and available bulk actions.</div>
+</div>
+
+<h3>Selection Toolbar</h3>
+<p>The toolbar at the top provides these actions:</p>
+<ul>
+  <li><strong>Select all / Clear</strong> &mdash; Select or deselect all sites in the current workspace.</li>
+  <li><strong>Move to...</strong> &mdash; Move selected sites to a different category (with a Move/Copy radio toggle).</li>
+  <li><strong>Copy URLs</strong> &mdash; Copy all selected sites' URLs to your clipboard, one per line.</li>
+  <li><strong>Consolidate URLs</strong> &mdash; Merge duplicate URLs across categories.</li>
+  <li><strong>Refresh Names</strong> &mdash; Re-fetch page titles for all selected sites.</li>
+  <li><strong>Delete Selected</strong> &mdash; Delete all selected sites.</li>
+</ul>
+
+<div class="tip">
+  <strong>Tip:</strong> Click the checkbox next to a category name to select/deselect all sites in that category at once.
+</div>
+
+<h3>Move To Menu (from Select Mode)</h3>
+<p>When you click "Move to..." with items selected, the Move menu appears with Move/Copy radio buttons at the top, followed by the list of destination categories.</p>
+
+<div class="img-wrap">
+  <img src="images/New Tab-mh (3).jpg" alt="Move to menu in select mode">
+  <div class="img-caption">The Move to menu in select mode, showing 213 items selected, with the Move/Copy toggle and destination categories.</div>
+</div>
+
+<p>Click <strong>Done</strong> in the top-right corner to exit selection mode.</p>
+
+<a class="back-top" href="#overview">&uarr; back to top</a>
+
+<!-- ==================== WORKSPACES ==================== -->
+<h2 id="workspaces">Workspaces</h2>
+<p>Workspaces let you organize categories into separate groups. Think of them as different dashboards &mdash; for example, you might have a "Work" workspace and a "Personal" workspace.</p>
+
+<h3>Switching Workspaces</h3>
+<p>Click the workspace name in the header to open the workspace dropdown. Click any workspace name to switch to it.</p>
+
+<h3>Managing Workspaces</h3>
+<p>The workspace dropdown provides these actions for each workspace:</p>
+<ul>
+  <li><strong>Rename</strong> &mdash; Click the pencil icon to rename a workspace.</li>
+  <li><strong>Duplicate</strong> &mdash; Click the copy icon to create a duplicate of the workspace (with a "+" suffix). All categories and sites are deep-copied with unique IDs.</li>
+  <li><strong>Delete</strong> &mdash; Click the trash icon to delete a workspace.</li>
+</ul>
+<p>Use the <strong>+ New Workspace</strong> option at the bottom of the dropdown to create a new workspace.</p>
+
+<h3>Moving Categories Between Workspaces</h3>
+<p>In the workspace dropdown, you can also move or copy entire categories to a different workspace using the Move/Copy toggle, similar to moving individual sites.</p>
+
+<a class="back-top" href="#overview">&uarr; back to top</a>
+
+<!-- ==================== ADD FROM BROWSER ==================== -->
+<h2 id="add-browser">Add from Browser</h2>
+<p>Click <strong>From Browser</strong> in the header to open the "Add from Browser" dialog. This lets you quickly import sites from two sources:</p>
+
+<h3>Open Tabs</h3>
+<p>The <strong>Open Tabs</strong> tab shows all tabs currently open in your browser. Check the ones you want to add, choose a destination category from the dropdown, and click <strong>Add Selected</strong>.</p>
+
+<div class="img-wrap">
+  <img src="images/New Tab-mh.jpg" alt="Add from Browser - Open Tabs">
+  <div class="img-caption">The "Add from Browser" dialog showing the Open Tabs view. Select the tabs you want to save and choose a destination category.</div>
+</div>
+
+<h3>Bookmarks</h3>
+<p>The <strong>Bookmarks</strong> tab shows your Chrome bookmarks. You can filter by bookmark folder, search by name, and select individual bookmarks to import.</p>
+
+<div class="img-wrap">
+  <img src="images/New Tab-mh (1).jpg" alt="Add from Browser - Bookmarks">
+  <div class="img-caption">The Bookmarks view lets you browse and filter your Chrome bookmarks by folder, then select ones to import.</div>
+</div>
+
+<h4>Toolbar Controls</h4>
+<ul>
+  <li><strong>Filter</strong> &mdash; Type to search within the displayed tabs or bookmarks.</li>
+  <li><strong>Enable saved</strong> &mdash; Show/hide sites that are already saved in your categories.</li>
+  <li><strong>Select all / Clear</strong> &mdash; Quickly select or deselect all visible items.</li>
+  <li><strong>Add to</strong> dropdown &mdash; Choose which category to add the selected sites to.</li>
+</ul>
+
+<a class="back-top" href="#overview">&uarr; back to top</a>
+
+<!-- ==================== SETTINGS ==================== -->
+<h2 id="settings">Settings</h2>
+<p>Click the gear icon in the header to open the Settings panel. It is divided into several sections:</p>
+
+<h3>Appearance</h3>
+<div class="img-wrap">
+  <img src="images/markuphero-69a0b3067d74e6bc256fc198.jpg" alt="Settings - Appearance">
+  <div class="img-caption">The Settings panel showing Appearance, Quick Add, and Data options.</div>
+</div>
+
+<ul>
+  <li><strong>Theme</strong> &mdash; Choose between Light and Dark mode.</li>
+  <li><strong>Columns</strong> &mdash; Set the number of category columns displayed (2, 3, or 4).</li>
+  <li><strong>Show site count</strong> &mdash; Toggle the site count badges on/off in category headers.</li>
+</ul>
+
+<h3>Quick Add</h3>
+<ul>
+  <li><strong>Inbox category</strong> &mdash; Choose which category receives sites when you click the extension icon in the browser toolbar. This provides a one-click way to save the current page.</li>
+</ul>
+
+<h3>Data</h3>
+<ul>
+  <li><strong>Export JSON</strong> &mdash; Download all your data (workspaces, categories, sites) as a JSON file for backup.</li>
+  <li><strong>Export HTML</strong> &mdash; Download a readable HTML page of all your saved sites.</li>
+  <li><strong>Import</strong> &mdash; Restore data from a previously exported JSON backup.</li>
+  <li><strong>Reset</strong> &mdash; Clear all data and start fresh. <em>Use with caution!</em></li>
+</ul>
+
+<h3>Category Visibility</h3>
+<div class="img-wrap">
+  <img src="images/markuphero-69a0b3237d74e6bc256fc19e.jpg" alt="Settings - Category Visibility">
+  <div class="img-caption">The Category Visibility section lets you show or hide individual categories. You can also drag to reorder them.</div>
+</div>
+
+<p>Toggle categories on/off to control which ones are visible on the dashboard. Use the drag handles to reorder categories. Hidden categories are not deleted &mdash; they're simply not displayed.</p>
+
+<div class="tip">
+  <strong>Tip:</strong> Regularly export your data as a JSON backup. This protects against accidental data loss and lets you transfer your setup to another computer.
+</div>
+
+<a class="back-top" href="#overview">&uarr; back to top</a>
+
+<!-- ==================== KEYBOARD SHORTCUTS ==================== -->
+<h2 id="keyboard">Keyboard Shortcuts</h2>
+<p>Tab Manager Pro supports keyboard shortcuts for quick navigation:</p>
+
+<table style="width:100%; border-collapse:collapse; margin:16px 0 24px;">
+  <thead>
+    <tr style="text-align:left; border-bottom:2px solid #ccc;">
+      <th style="padding:8px 12px;">Shortcut</th>
+      <th style="padding:8px 12px;">Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="border-bottom:1px solid #eee;">
+      <td style="padding:8px 12px;"><kbd>Option</kbd> + <kbd>1</kbd> &ndash; <kbd>9</kbd></td>
+      <td style="padding:8px 12px;">Switch to workspace 1 through 9</td>
+    </tr>
+    <tr style="border-bottom:1px solid #eee;">
+      <td style="padding:8px 12px;"><kbd>Cmd</kbd> + <kbd>Option</kbd> + <kbd>1</kbd> &ndash; <kbd>9</kbd></td>
+      <td style="padding:8px 12px;">Switch to workspace 1 through 9 (alternative)</td>
+    </tr>
+    <tr style="border-bottom:1px solid #eee;">
+      <td style="padding:8px 12px;"><kbd>/</kbd> or <kbd>Cmd</kbd> + <kbd>K</kbd></td>
+      <td style="padding:8px 12px;">Focus the search bar</td>
+    </tr>
+    <tr style="border-bottom:1px solid #eee;">
+      <td style="padding:8px 12px;"><kbd>Escape</kbd></td>
+      <td style="padding:8px 12px;">Clear search / exit select mode / close dialogs</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>On Windows, use <kbd>Alt</kbd> instead of <kbd>Option</kbd> and <kbd>Ctrl</kbd> instead of <kbd>Cmd</kbd>.</p>
+
+<a class="back-top" href="#overview">&uarr; back to top</a>
+
+<!-- ==================== FOOTER ==================== -->
+<div style="margin-top:56px; padding-top:24px; border-top:1px solid #dde1ea; color:#888; font-size:14px; text-align:center;">
+  Tab Manager Pro User Guide
+</div>
+
+</div><!-- /container -->
+</body>
+</html>

@@ -1,0 +1,2558 @@
+/* =========================================================
+   Tab Manager Pro - Main Styles
+   ========================================================= */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+/* =========================================================
+   Layout
+   ========================================================= */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-header);
+  backdrop-filter: blur(8px);
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.main-content {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
+  transition: padding-top 0.15s ease;
+}
+
+/* Push content down when the selection toolbar is visible */
+.select-mode .main-content {
+  padding-top: 84px; /* 28px normal + ~56px toolbar height */
+}
+
+/* =========================================================
+   Search
+   ========================================================= */
+
+.search-wrapper {
+  position: relative;
+  flex: 1;
+  max-width: 480px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 36px 0 40px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Remove native search cancel button (we have our own) */
+.search-input::-webkit-search-cancel-button,
+.search-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.clear-search {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  border-radius: 50%;
+  transition: color 0.15s, background 0.15s;
+}
+
+.clear-search:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.clear-search svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* =========================================================
+   Workspace Selector
+   ========================================================= */
+
+.workspace-selector {
+  position: relative;
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+.workspace-selector-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  background: var(--bg-btn);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.workspace-selector-trigger:hover {
+  background: var(--bg-btn-hover);
+  border-color: var(--accent);
+}
+
+.workspace-selector-trigger svg {
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+
+.workspace-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 220px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--bg-modal);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
+  padding: 4px;
+}
+
+.workspace-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.workspace-item:hover {
+  background: var(--bg-hover);
+}
+
+.workspace-item.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.workspace-item.dragging {
+  opacity: 0.5;
+}
+
+.workspace-drag-handle {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.workspace-item:hover .workspace-drag-handle {
+  opacity: 1;
+}
+
+.workspace-drag-handle:active {
+  cursor: grabbing;
+}
+
+.workspace-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workspace-name[contenteditable="true"] {
+  background: var(--bg-input);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--accent);
+  cursor: text;
+}
+
+.workspace-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.workspace-item:hover .workspace-actions {
+  opacity: 1;
+}
+
+.workspace-copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  transition: background 0.15s, color 0.15s;
+}
+
+.workspace-copy-btn:hover {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.workspace-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  transition: background 0.15s, color 0.15s;
+}
+
+.workspace-delete-btn:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.workspace-new-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 12px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+
+.workspace-new-btn:hover {
+  background: var(--accent-bg);
+}
+
+.workspace-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: var(--bg-badge);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.workspace-badge[hidden] {
+  display: none;
+}
+
+.workspace-menu {
+  min-width: 180px;
+  background: var(--bg-modal);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 4px;
+  z-index: 1000;
+}
+
+.workspace-menu-item {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  text-align: left;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text);
+  transition: background 0.15s;
+}
+
+.workspace-menu-item:hover {
+  background: var(--bg-hover);
+}
+
+.workspace-menu-item.current {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* =========================================================
+   Buttons
+   ========================================================= */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-primary svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-secondary {
+  background: var(--bg-btn);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-btn-hover);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: var(--danger-hover);
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--text-muted);
+  transition: color 0.15s, background 0.15s;
+}
+
+.icon-btn:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+a.icon-btn {
+  text-decoration: none;
+}
+
+/* Theme toggle: show correct icon */
+.theme-light .icon-moon { display: block; }
+.theme-light .icon-sun  { display: none; }
+.theme-dark  .icon-sun  { display: block; }
+.theme-dark  .icon-moon { display: none; }
+
+/* Layout toggle: removed (Kanban only) */
+
+/* =========================================================
+   Save indicator
+   ========================================================= */
+
+.save-indicator {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.save-indicator.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* =========================================================
+   Undo Toast
+   ========================================================= */
+
+.undo-toast {
+  position: fixed;
+  bottom: 60px;
+  right: 20px;
+  padding: 10px 18px;
+  background: var(--text);
+  color: var(--bg-card);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+  z-index: 999;
+  box-shadow: var(--shadow-popup);
+  max-width: 300px;
+}
+
+.undo-toast.show {
+  opacity: 0.95;
+  transform: translateY(0);
+}
+
+/* =========================================================
+   Empty States
+   ========================================================= */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 300px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 40px;
+}
+
+/* Ensure [hidden] collapses empty states fully */
+.empty-state[hidden] {
+  display: none !important;
+}
+
+.empty-state svg {
+  width: 56px;
+  height: 56px;
+  opacity: 0.4;
+}
+
+.empty-state p {
+  font-size: 15px;
+  max-width: 340px;
+}
+
+/* =========================================================
+   Categories Grid
+   ========================================================= */
+
+.categories-grid {
+  /* Kanban mode only (column mode deprecated) */
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  padding-bottom: 12px;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Style the scrollbar */
+.categories-grid::-webkit-scrollbar {
+  height: 12px;
+}
+
+.categories-grid::-webkit-scrollbar-track {
+  background: var(--bg-hover);
+  border-radius: 6px;
+}
+
+.categories-grid::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 6px;
+}
+
+.categories-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Category cards in Kanban mode */
+.categories-grid > .category-card {
+  /* Fixed width columns */
+  width: 320px;
+  min-width: 320px;
+  flex-shrink: 0;
+
+  /* Max height with internal scrolling */
+  max-height: calc(100vh - 180px);
+  display: flex;
+  flex-direction: column;
+
+  /* Smooth transition for width changes */
+  transition: width 0.3s ease, min-width 0.3s ease;
+}
+
+/* Expanded category (double width) */
+.categories-grid > .category-card.category-expanded {
+  width: 640px;
+  min-width: 640px;
+}
+
+/* Sites list scrolls internally */
+.categories-grid .sites-list {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Mobile responsive: vertical stacking */
+@media (max-width: 560px) {
+  .categories-grid {
+    display: block;
+    overflow-x: visible;
+    overflow-y: visible;
+    padding-bottom: 0;
+  }
+
+  .categories-grid > .category-card {
+    width: 100%;
+    min-width: 0;
+    max-height: none;
+    display: block;
+    margin-bottom: 20px;
+  }
+
+  .categories-grid .sites-list {
+    overflow-y: visible;
+  }
+
+  .main-content { padding: 16px 12px 40px; }
+  .header { padding: 10px 12px; }
+}
+
+/* =========================================================
+   Category Card
+   ========================================================= */
+
+.category-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+
+.category-card:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+.category-card.drag-over {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-ring);
+}
+
+.category-card.inbox-highlight {
+  border-left: 3px solid var(--accent);
+}
+
+.category-card.dragging-card {
+  opacity: 0.4;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 14px 10px;
+  cursor: default;
+}
+
+.category-drag-handle {
+  color: var(--text-muted);
+  opacity: 0;
+  cursor: grab;
+  padding: 2px;
+  border-radius: 4px;
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.category-card:hover .category-drag-handle {
+  opacity: 1;
+}
+
+.category-drag-handle:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.category-drag-handle svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.category-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px;
+  transition: background 0.15s;
+}
+
+.category-icon:hover {
+  background: var(--bg-hover);
+}
+
+.category-title {
+  flex: 1 1 auto;
+  min-width: 60px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.category-title-input {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--bg-input);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 2px 6px;
+  outline: none;
+}
+
+.category-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--bg-badge);
+  padding: 2px 8px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.category-menu-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.category-menu-btn[hidden] {
+  display: none;
+}
+
+.category-card:hover .category-menu-btn {
+  opacity: 1;
+}
+
+.category-menu-btn:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.category-menu-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+
+/* Expand width button */
+.category-expand-btn {
+  width: 24px;
+  height: 24px;
+  display: flex; /* Always visible in Kanban mode */
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.category-card:hover .category-expand-btn {
+  opacity: 1;
+}
+
+.category-expand-btn:hover {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.category-expand-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Collapsed card — keep header visible, hide content */
+.categories-grid > .category-card.category-collapsed .go-to-category,
+.categories-grid > .category-card.category-collapsed .sites-list,
+.categories-grid > .category-card.category-collapsed .category-footer {
+  display: none;
+}
+
+.category-collapse-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s;
+}
+.category-collapse-btn svg {
+  width: 14px;
+  height: 14px;
+}
+.category-collapsed .category-collapse-btn {
+  transform: rotate(-90deg);
+}
+
+/* =========================================================
+   Sites List
+   ========================================================= */
+
+.sites-list {
+  padding: 0 8px 8px;
+  min-height: 4px;
+}
+
+.sites-list.drag-over-empty {
+  min-height: 48px;
+  background: var(--accent-ring);
+  border-radius: 8px;
+  margin: 0 4px 4px;
+}
+
+.site-tile {
+  display: grid;
+  grid-template-columns: auto auto auto 1fr auto;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+  text-decoration: none;
+  color: var(--text);
+  position: relative;
+  user-select: none;
+}
+
+.site-tile:hover {
+  background: var(--bg-hover);
+}
+
+.site-tile:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.site-tile.dragging {
+  opacity: 0.4;
+}
+
+.site-drag-handle {
+  color: var(--text-muted);
+  opacity: 0;
+  cursor: grab;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.site-tile:hover .site-drag-handle {
+  opacity: 1;
+}
+
+.site-drag-handle svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.site-favicon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.site-favicon-fallback {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.site-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Multiline text in expanded categories (up to 3 lines) */
+.category-expanded .site-name {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
+}
+
+/* Note toggle button */
+
+/* Note preview (truncated single line) */
+.site-note-preview {
+  grid-column: 3 / -1;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  margin-top: -4px;
+}
+
+.site-note-preview:hover {
+  color: var(--accent);
+}
+
+/* Hide preview when expanded */
+.site-tile.note-expanded .site-note-preview {
+  display: none;
+}
+
+/* Note content area (full text) */
+.site-note-content {
+  display: none;
+  grid-column: 3 / -1;
+  padding: 4px 0 2px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  cursor: pointer;
+  margin-top: -4px;
+}
+
+.site-note-content:hover {
+  color: var(--text-muted);
+}
+
+/* Show note when tile has note-expanded class */
+.site-tile.note-expanded .site-note-content {
+  display: block;
+}
+
+/* Make site-tile a grid container to support full-width note */
+.site-tile {
+  display: grid;
+  grid-template-columns: auto auto auto 1fr;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+  text-decoration: none;
+  color: var(--text);
+  position: relative;
+  user-select: none;
+}
+
+.site-drop-indicator {
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  margin: 2px 8px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.site-drop-indicator.visible {
+  opacity: 1;
+}
+
+/* =========================================================
+   Add Site Button
+   ========================================================= */
+
+.add-site-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+  transition: color 0.15s, background 0.15s;
+}
+
+.add-site-btn:hover {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.add-site-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.open-tabs-btn {
+  display: flex;
+  align-items: center;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0;
+  transition: color .15s, background .15s;
+}
+
+.open-tabs-btn:hover {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.open-tabs-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.select-mode .open-tabs-btn {
+  display: none;
+}
+
+/* =========================================================
+   Category Footer
+   ========================================================= */
+
+.category-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 10px 8px;
+  margin-top: 4px;
+}
+
+.category-footer-icons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.category-dedupe-link {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.category-dedupe-link:hover {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+/* =========================================================
+   Context Menu
+   ========================================================= */
+
+.context-menu {
+  position: fixed;
+  z-index: 500;
+  background: var(--bg-popup);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow-popup);
+  padding: 6px;
+  min-width: 180px;
+  animation: popIn 0.1s ease;
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.context-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text);
+  text-align: left;
+  transition: background 0.12s;
+}
+
+.context-item:hover {
+  background: var(--bg-hover);
+}
+
+.context-item svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.context-item--danger {
+  color: var(--danger);
+}
+
+.context-item--danger svg {
+  color: var(--danger);
+}
+
+.context-item--danger:hover {
+  background: var(--danger-bg);
+}
+
+.context-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
+/* Move-to-category submenu — add scrolling for long lists */
+#moveMenu {
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 240px;
+}
+
+/* =========================================================
+   Modals
+   ========================================================= */
+
+.modal-overlay {
+  display: none;          /* hidden by default */
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.45);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.15s ease;
+}
+
+/* Shown via JS by adding .is-open — avoids [hidden] UA stylesheet conflict */
+.modal-overlay.is-open {
+  display: flex;
+}
+
+/* Confirm dialog sits above all other modals */
+#confirmDialog {
+  z-index: 400;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  background: var(--bg-modal);
+  border-radius: 14px;
+  box-shadow: var(--shadow-modal);
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.18s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.modal--wide { max-width: 520px; }
+.modal--sm   { max-width: 360px; }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 0;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.modal-close {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--text-muted);
+  transition: color 0.15s, background 0.15s;
+}
+
+.modal-close:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.modal-close svg {
+  width: 18px;
+  height: 18px;
+}
+
+.modal-body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 0 22px 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* =========================================================
+   Forms
+   ========================================================= */
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.required {
+  color: var(--danger);
+}
+
+.form-hint {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.form-input, .form-select {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+/* URL textarea — overrides the fixed height from .form-input */
+.site-url-textarea {
+  height: auto;
+  padding: 8px 12px;
+  resize: vertical;
+  min-height: 38px;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+/* Note textarea */
+.note-textarea {
+  height: auto;
+  padding: 8px 12px;
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.6;
+  font-family: inherit;
+}
+
+/* Site type toggle (URL / Note) */
+.site-type-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.site-type-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+  cursor: pointer;
+}
+
+.site-type-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.site-type-btn.active {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+
+/* Note tile in the category card */
+.note-tile {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--accent-bg);
+  border: 1px solid var(--border);
+  margin: 3px 0;
+  cursor: default;
+  user-select: text;
+}
+
+.note-tile-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.note-tile-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.note-tile-icon svg {
+  width: 13px;
+  height: 13px;
+  display: block;
+}
+
+.note-tile-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-tile-text {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Clickable URLs in notes */
+.note-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.note-link:hover {
+  text-decoration: underline;
+}
+
+/* Note tile action buttons (edit/delete), shown on hover */
+.note-tile-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.note-tile:hover .note-tile-actions {
+  opacity: 1;
+}
+
+.note-tile-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  color: var(--text-muted);
+  transition: color 0.15s, background 0.15s;
+}
+
+.note-tile-btn:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.note-tile-btn--danger:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.note-tile-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Note tile in select mode */
+.select-mode .note-tile {
+  cursor: default;
+  position: relative;
+}
+
+.note-tile.selected {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+/* Checkbox on note tile */
+.note-select-cb {
+  display: none;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--accent);
+  pointer-events: none;
+  margin-right: 4px;
+}
+
+.select-mode .note-select-cb {
+  display: inline-block;
+}
+
+.form-input:focus, .form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.form-input.error {
+  border-color: var(--danger);
+}
+
+.form-error {
+  display: block;
+  font-size: 12px;
+  color: var(--danger);
+  margin-top: 4px;
+}
+
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+/* =========================================================
+   Emoji Picker
+   ========================================================= */
+
+.emoji-picker {
+  position: relative;
+}
+
+.emoji-selected {
+  font-size: 28px;
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--bg-input);
+  transition: border-color 0.15s, background 0.15s;
+  line-height: 1;
+}
+
+.emoji-selected:hover {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.emoji-grid {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  background: var(--bg-popup);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-popup);
+  padding: 10px;
+  width: 260px;
+  display: none;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.emoji-grid.open {
+  display: flex;
+}
+
+.emoji-option {
+  font-size: 22px;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+  line-height: 1;
+}
+
+.emoji-option:hover {
+  background: var(--bg-hover);
+}
+
+.emoji-option.selected {
+  background: var(--accent-bg);
+}
+
+/* =========================================================
+   Settings Panel
+   ========================================================= */
+
+.settings-section {
+  margin-bottom: 28px;
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-heading {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row--buttons {
+  align-items: center;
+}
+
+.settings-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  text-align: left;
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-label span {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.settings-label small {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding-left: 28px;
+}
+
+.settings-about {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Theme Switcher */
+.theme-switcher, .column-switcher {
+  display: flex;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.theme-option, .col-option {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: background 0.15s, color 0.15s;
+}
+
+.theme-option:hover, .col-option:hover {
+  color: var(--text);
+}
+
+.theme-option.active, .col-option.active {
+  background: var(--bg-card);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+/* Toggle Switch */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggle input:checked + .toggle-slider {
+  background: var(--accent);
+}
+
+.toggle input:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+.toggle input:focus-visible + .toggle-slider {
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+/* =========================================================
+   Search Highlight
+   ========================================================= */
+
+.search-highlight {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* Go-to-category link (visible only during search) */
+.go-to-category {
+  display: none;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+.go-to-category:hover {
+  text-decoration: underline;
+}
+.search-active .go-to-category {
+  display: inline-block;
+}
+
+/* Back-to-search bar */
+.back-to-search-bar {
+  padding: 6px 16px;
+}
+.back-to-search-bar[hidden] {
+  display: none;
+}
+.back-to-search-btn {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.back-to-search-btn:hover {
+  background: var(--bg-hover);
+  text-decoration: underline;
+}
+
+/* Category hidden during search */
+.category-card.search-hidden {
+  display: none !important;
+}
+
+/* Position indicator in search results */
+.search-position {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-badge);
+  padding: 2px 6px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* Note match indicator in search results */
+.note-match-badge {
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  padding: 2px 6px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  margin-left: 6px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+/* Hide tiles when hidden attribute is set (overrides display: grid/flex) */
+.site-tile[hidden],
+.note-tile[hidden] {
+  display: none !important;
+}
+
+/* =========================================================
+   Select Mode
+   ========================================================= */
+
+/* Header Select button — active state */
+.btn-secondary.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Selection toolbar — fixed below the main header */
+.selection-toolbar {
+  display: none;
+  position: fixed;
+  top: 57px; /* sits flush under the sticky header */
+  left: 0;
+  right: 0;
+  z-index: 150;
+  background: var(--bg-modal);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  padding: 8px 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  animation: slideDownToolbar 0.15s ease;
+}
+
+.selection-toolbar.is-visible {
+  display: flex;
+}
+
+@keyframes slideDownToolbar {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.selection-count {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  min-width: 100px;
+}
+
+.selection-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Per-category select-all checkbox in card header */
+.cat-select-all-cb {
+  display: none;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--accent);
+  margin-right: 2px;
+}
+
+/* Show category checkbox only in select mode */
+.select-mode .cat-select-all-cb {
+  display: block;
+}
+
+/* Per-site checkbox in tiles */
+.site-select-cb {
+  display: none;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--accent);
+  pointer-events: none; /* tile handles the click */
+}
+
+/* Show site checkboxes in select mode */
+.select-mode .site-select-cb {
+  display: block;
+}
+
+/* Hide drag handle in select mode (no dragging while selecting) */
+.select-mode .site-drag-handle,
+.select-mode .category-drag-handle {
+  display: none;
+}
+
+/* Disable drag handles during search (no dragging while filtering) */
+.search-active .site-drag-handle,
+.search-active .category-drag-handle {
+  opacity: 0.3;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* Hide drop indicators during search */
+.search-active .site-drop-indicator {
+  display: none !important;
+}
+
+/* Selected site tile highlight */
+.site-tile.selected {
+  background: var(--accent-bg);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.site-tile.selected:hover {
+  background: var(--accent-bg);
+}
+
+/* In select mode, cursor is default on tiles (not pointer) */
+.select-mode .site-tile {
+  cursor: default;
+}
+
+/* Move-to menu — fixed position, anchored above the toolbar by JS */
+.move-selected-menu {
+  position: fixed;
+  z-index: 600;
+  min-width: 240px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+/* Each category row in the move menu: label on left, Top/Bottom buttons on right */
+.move-menu-mode-toggle {
+  display: flex;
+  gap: 12px;
+  padding: 6px 10px 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+.move-menu-mode-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.move-menu-mode-label input[type="radio"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.move-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+
+.move-menu-row:hover {
+  background: var(--bg-hover);
+}
+
+.move-menu-cat-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.move-menu-pos-btns {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.move-menu-pos-btn {
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent);
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+
+.move-menu-pos-btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.move-menu-ws-header {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: 6px 10px 2px;
+}
+
+/* =========================================================
+   Browser Picker Modal
+   ========================================================= */
+
+/* Source toggle bar (Tabs / Bookmarks) */
+.picker-source-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.picker-source-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.picker-source-btn svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.picker-source-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.picker-source-btn.active {
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+
+/* Folder filter */
+.picker-folder-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.picker-folder-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.picker-folder-label svg {
+  width: 16px;
+  height: 16px;
+}
+
+.picker-folder-select {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Search filter */
+.picker-search-wrap {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.picker-search-wrap svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 15px;
+  height: 15px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.picker-search {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px 0 34px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.picker-search:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.picker-search::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Selection count + actions row */
+.picker-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  min-height: 24px;
+}
+
+.picker-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.picker-actions-right {
+  display: flex;
+  gap: 4px;
+}
+
+.picker-link-btn {
+  font-size: 12px;
+  color: var(--accent);
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.12s;
+}
+
+.picker-link-btn:hover {
+  background: var(--accent-bg);
+}
+
+/* Scrollable list */
+.picker-list {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow-y: auto;
+  max-height: 320px;
+  background: var(--bg-input);
+}
+
+/* Empty / loading state inside picker */
+.picker-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Individual picker row */
+.picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background 0.1s;
+}
+
+.picker-item:last-child {
+  border-bottom: none;
+}
+
+.picker-item:hover {
+  background: var(--bg-hover);
+}
+
+.picker-item.already-saved {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.picker-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.picker-item.already-saved input[type="checkbox"] {
+  cursor: default;
+}
+
+.picker-item-favicon {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.picker-item-favicon-fallback {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.picker-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.picker-item-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.picker-item-url {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.picker-item-folder {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.picker-item-badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: var(--bg-badge);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Footer */
+.picker-footer {
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.picker-target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.picker-target-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.picker-cat-select {
+  height: 34px;
+  font-size: 13px;
+  max-width: 180px;
+}
+
+.picker-footer-btns {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* =========================================================
+   Drag-and-drop Ghost
+   ========================================================= */
+
+.drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.9;
+  transform: rotate(1.5deg) scale(1.02);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  border-radius: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--text);
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================================
+   Category Visibility List Drag-to-Reorder
+   ========================================================= */
+
+/* Visibility list rows get a grip handle */
+.vis-row {
+  position: relative;
+}
+
+/* Drag grip handle icon */
+.vis-drag-grip {
+  color: var(--text-muted);
+  opacity: 0.4;
+  cursor: grab;
+  flex-shrink: 0;
+  padding: 2px;
+  border-radius: 4px;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 4px;
+}
+
+.vis-row:hover .vis-drag-grip {
+  opacity: 1;
+}
+
+.vis-drag-grip:hover {
+  color: var(--text);
+  background: var(--bg-hover);
+}
+
+.vis-drag-grip svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.vis-drag-grip:active {
+  cursor: grabbing;
+}
+
+/* Floating ghost element during drag */
+.vis-drag-ghost {
+  position: fixed;
+  z-index: 500;
+  pointer-events: none;
+  opacity: 0.85;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  border-radius: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+/* Source row while being dragged */
+.vis-row-dragging {
+  opacity: 0.3;
+}
+
+/* Drop indicator above target row */
+.vis-drop-above::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+}
+
+/* Drop indicator below target row */
+.vis-drop-below::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+}
+
+/* =========================================================
+   Favicon Picker & Preview
+   ========================================================= */
+
+.favicon-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.favicon-input-row .form-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.favicon-preview {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg-input);
+}
+
+.favicon-picker-toggle {
+  height: 38px;
+  padding: 0 12px;
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.favicon-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  padding: 10px;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-input);
+}
+
+.favicon-picker-item {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  padding: 6px;
+}
+
+.favicon-picker-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--border);
+}
+
+.favicon-picker-item.selected {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+
+.favicon-picker-item img {
+  width: 24px;
+  height: 24px;
+}
+
+.favicon-picker-item-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================================
+   Bird's-Eye View (All Workspaces Stacked)
+   ========================================================= */
+
+#birdsEyeToggle.active {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.birdseye-container {
+  display: block !important;
+  overflow-x: visible !important;
+  overflow-y: visible !important;
+}
+
+.workspace-section {
+  margin-bottom: 24px;
+  scroll-margin-top: 64px; /* clear the sticky header */
+}
+.workspace-section:last-child {
+  margin-bottom: 0;
+}
+
+.workspace-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.workspace-section-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.workspace-section-count {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.workspace-section-chevron {
+  color: var(--text-muted);
+  transition: transform 0.2s;
+  width: 16px;
+  height: 16px;
+}
+
+.workspace-section.collapsed .workspace-section-chevron {
+  transform: rotate(-90deg);
+}
+
+.workspace-section.active .workspace-section-name {
+  color: var(--accent);
+}
+
+.workspace-section.collapsed .categories-grid {
+  display: none;
+}
