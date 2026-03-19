@@ -1,8 +1,8 @@
 # Tab Manager Pro
 
-A Chrome extension that replaces the default new tab page with a clean, customizable dashboard of your favourite websites, organised into categories.
+A Chrome extension that replaces the default new tab page with a powerful, customizable dashboard for organizing your favourite websites, notes, and bookmarks into categories and workspaces.
 
-All data is stored **locally** in your browser. Nothing is sent to any server.
+All data is stored **locally** in your browser via `chrome.storage.sync`. Nothing is sent to any server.
 
 ---
 
@@ -18,13 +18,36 @@ All data is stored **locally** in your browser. Nothing is sent to any server.
 
 ## Features
 
+### Workspaces
+- Organize categories into separate workspace groups (e.g., "Work", "Personal")
+- Switch between workspaces via the header dropdown or keyboard shortcuts
+- Create, rename, duplicate, and delete workspaces
+- Move or copy categories between workspaces
+
+### Bird's-Eye View
+- Toggle an all-workspaces panoramic view showing every workspace stacked vertically
+- Each workspace section has its own horizontal row of category cards
+- Collapsible workspace sections with click-to-set-active behaviour
+- Keyboard navigation: scroll to workspaces, move active indicator, horizontal scroll
+
 ### Categories & Sites
 - Create unlimited categories with custom emoji icons
 - Add, edit, and delete sites within each category
-- Click a site to open it in the current tab
-- Right-click a site for more options (open in new tab, edit, move, delete)
+- Add multiple URLs at once (one per line)
+- Click a site to open it in a new tab
+- Right-click a site for a full context menu (open, copy URL, edit, move, copy to category, delete)
 - Click a category title to rename it inline
 - Click the category emoji to change it
+- Collapse/expand categories via the header chevron (state persists)
+- Sort sites alphabetically within a category
+- Toggle between list view and grid/tile view per category
+- Deduplicate URLs within a category
+
+### Notes
+- Create standalone text notes (without a URL) inside any category
+- Attach notes to URL sites as supplementary text
+- Note previews shown inline; click to expand/collapse
+- URLs within notes are automatically clickable
 
 ### Drag & Drop
 - Reorder sites within a category by dragging
@@ -32,55 +55,61 @@ All data is stored **locally** in your browser. Nothing is sent to any server.
 - Reorder category columns by dragging
 
 ### Search
-- Real-time search across all sites (name and URL)
+- Real-time search across all workspaces — matches site names, URLs, note text, and category names
+- When a category name matches, all its sites are shown
 - Matching text is highlighted
 - Press `Esc` to clear the search
 
+### Multi-Select Mode
+- Select multiple sites for bulk operations
+- Shift+click for range selection; category checkbox to select all in a category
+- Bulk actions: Move, Copy, Delete, Copy URLs, Consolidate duplicates, Refresh Names, Fetch Descriptions
+
+### Quick Add
+- Click the Tab Manager Pro icon in the browser toolbar to save the current page to your inbox category with one click
+
+### Save All Open Tabs
+- Click the floppy-disk icon in the header to snapshot all open browser tabs into a new category
+
+### Import from Browser
+- Import sites from currently open tabs or Chrome bookmarks
+- Filter, search, and select which items to import
+- Already-saved sites are marked to avoid duplicates
+
+### Undo
+- Press `Cmd/Ctrl + Z` to undo destructive operations (delete, move, reorder)
+- Snapshot-based: restores the full state before the operation
+
 ### Keyboard Shortcuts
+
 | Shortcut | Action |
 |---|---|
-| `Cmd/Ctrl + K` | Focus the search box |
-| `Esc` | Clear search / close menus |
-| `Enter` (on a site tile) | Open the site |
-| `Space` (on a site tile) | Edit the site |
+| `Option/Alt + 1`–`9` | Switch to workspace 1–9 (bird's-eye: scroll to workspace) |
+| `Option/Alt + 0` | Jump to inbox category (scroll + flash highlight) |
+| `Option/Alt + Up/Down` | Move active workspace up/down |
+| `Option/Alt + Left/Right` | Scroll categories horizontally |
+| `/` or `Cmd/Ctrl + K` | Focus the search box |
+| `Cmd/Ctrl + Z` | Undo last destructive operation |
+| `Esc` | Clear search / close menus / exit select mode |
+
+On Windows, use `Alt` instead of `Option` and `Ctrl` instead of `Cmd`.
 
 ### Settings
 - **Theme**: Light or Dark mode (also toggleable via the header icon)
 - **Columns**: 2, 3, or 4 column layout
+- **Layout Mode**: Column (default) or Kanban (horizontal scroll)
 - **Show site count**: Toggle site count badges on category headers
-- **Export**: Download all your data as a JSON file
+- **Quick Add inbox**: Choose which category receives one-click saves
+- **Export JSON**: Download all data as a JSON backup
+- **Export HTML**: Download a readable HTML page of all saved sites
 - **Import**: Restore from a previously exported JSON file
 - **Reset**: Clear all data and start fresh
 
 ### Data Safety
-- All data is stored using `chrome.storage.local`
-- Changes are auto-saved with a 500 ms debounce
+- All data is stored using `chrome.storage.sync`
+- Changes are auto-saved with a 300ms debounce
 - A "Saved" indicator confirms each save
 - Export your data regularly as a backup
-
----
-
-## Usage Guide
-
-### Adding a Category
-1. Click **+ Add Category** in the header.
-2. Enter a name and pick an emoji icon.
-3. Click **Save Category**.
-
-### Adding a Site
-1. Click **Add site** at the bottom of any category card.
-2. Enter the URL (name is auto-detected from the domain).
-3. Optionally set a custom favicon URL.
-4. Click **Save Site**.
-
-### Moving a Site
-- **Drag**: Grab the drag handle (⠿) on the left of a site tile and drop it into any category.
-- **Context menu**: Right-click → Move to category → pick a destination.
-
-### Import / Export
-- **Export**: Settings → Export → saves a `.json` file to your Downloads.
-- **Import**: Settings → Import → select a previously exported `.json` file.
-  - The imported data fully replaces your current data.
 
 ---
 
@@ -90,26 +119,29 @@ All data is stored **locally** in your browser. Nothing is sent to any server.
 tab-manager-extension/
 ├── manifest.json        Chrome extension manifest (MV3)
 ├── newtab.html          New tab page HTML
+├── help.html            User guide (opened via ? button)
+├── CLAUDE.md            Project guide for AI-assisted development
+├── DOCUMENTATION.md     Technical documentation for developers
+├── README.md            This file
+├── js/
+│   ├── newtab.js        Main application controller (~5000 lines)
+│   ├── storage.js       Chrome storage wrapper + import/export
+│   ├── utils.js         Shared helpers (IDs, favicons, debounce, etc.)
+│   ├── dragdrop.js      HTML5 drag-and-drop logic
+│   ├── undo.js          Snapshot-based undo system
+│   └── background.js    Service worker for Quick Add
 ├── css/
 │   ├── styles.css       All component styles
 │   └── themes.css       Light and dark theme CSS variables
-├── js/
-│   ├── utils.js         Shared helpers (IDs, favicons, debounce, etc.)
-│   ├── storage.js       chrome.storage.local wrapper + import/export
-│   ├── dragdrop.js      HTML5 drag-and-drop logic
-│   └── newtab.js        Main application controller
-├── icons/
-│   ├── icon16.png
-│   ├── icon48.png
-│   └── icon128.png
-└── README.md
+├── icons/               Extension icons (16, 48, 128px)
+└── images/              Screenshots for help.html
 ```
 
 ---
 
 ## Privacy
 
-Tab Manager Pro stores all data exclusively in `chrome.storage.local` on your device. It does not make any network requests except to load favicons from Google's public favicon service (`https://www.google.com/s2/favicons`). No personal data is collected or transmitted.
+Tab Manager Pro stores all data exclusively in `chrome.storage.sync` on your device. It does not make any network requests except to load favicons from Google's public favicon service (`https://www.google.com/s2/favicons`). No personal data is collected or transmitted.
 
 ---
 
@@ -123,7 +155,7 @@ Tab Manager Pro stores all data exclusively in `chrome.storage.local` on your de
 - You can set a custom favicon URL when editing a site.
 
 **Data lost after browser update**
-- `chrome.storage.local` data persists across browser updates. If data is lost, restore from an exported JSON backup.
+- `chrome.storage.sync` data persists across browser updates. If data is lost, restore from an exported JSON backup.
 
 **Import fails**
 - Ensure the file is a valid `.json` export from Tab Manager Pro (not a modified or corrupted file).

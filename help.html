@@ -116,6 +116,7 @@
     <a href="#workspaces">Workspaces</a>
     <a href="#add-browser">Add from Browser</a>
     <a href="#settings">Settings</a>
+    <a href="#birdseye">Bird&rsquo;s-Eye View</a>
     <a href="#keyboard">Keyboard Shortcuts</a>
   </nav>
 </div>
@@ -143,7 +144,7 @@
 <p>The header bar across the top of the page contains the primary controls for navigating and managing your dashboard.</p>
 
 <h3>Search</h3>
-<p>Type in the search box to instantly filter sites across all categories. Only matching sites and their categories will be shown.</p>
+<p>Type in the search box to instantly filter sites across all categories and workspaces. Matches against site names, URLs, note text, and <strong>category names</strong>. When a category name matches, all of its sites are shown. Only matching sites and their categories will be displayed.</p>
 <div class="img-wrap">
   <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (5).jpg" alt="Search bar">
   <div class="img-caption">The search bar (highlighted by the red arrow) lets you quickly find any saved site by name.</div>
@@ -160,7 +161,7 @@
 <p>Click the sun/moon icon to switch between light and dark mode. Your preference is saved automatically.</p>
 
 <h3>Settings</h3>
-<p>Click the gear icon to open the Settings modal, where you can configure appearance, data export/import, and category visibility.</p>
+<p>Click the gear icon to open the Settings modal, where you can configure appearance, Quick Add inbox, and data export/import.</p>
 <div class="img-wrap">
   <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (7).jpg" alt="Settings icon">
   <div class="img-caption">The gear icon (red arrow) opens the Settings panel.</div>
@@ -172,6 +173,12 @@
   <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (8).jpg" alt="Select button">
   <div class="img-caption">The Select button enters multi-select mode for bulk operations.</div>
 </div>
+
+<h3>Bird&rsquo;s-Eye View Toggle</h3>
+<p>Click the stacked-rectangles icon (between the workspace selector and the header actions) to toggle <strong>Bird&rsquo;s-Eye View</strong>. This shows all workspaces stacked vertically on one page. See the <a href="#birdseye">Bird&rsquo;s-Eye View</a> section for full details.</p>
+
+<h3>Save All Open Tabs</h3>
+<p>Click the floppy-disk icon to save <strong>all currently open browser tabs</strong> into a brand-new category. Tab Manager Pro creates the category automatically, names it with a timestamp, and populates it with every open tab&rsquo;s URL and title. This is a quick way to snapshot your browsing session.</p>
 
 <h3>From Browser</h3>
 <p>Click <strong>From Browser</strong> to import sites from your currently open tabs or your Chrome bookmarks.</p>
@@ -194,7 +201,10 @@
 <p>Categories are the vertical columns that contain your saved sites. Each category has a header, a list of sites, and a footer with actions.</p>
 
 <h3>Category Header</h3>
-<p>The category header shows the category name, a site count badge, and a collapse/expand chevron. Hover over the header to reveal additional controls.</p>
+<p>The category header shows a <strong>collapse/expand chevron</strong>, the category name, and a site count badge. Hover over the header to reveal additional controls.</p>
+
+<h4>Collapse / Expand</h4>
+<p>Click the chevron arrow at the left of the header to <strong>collapse</strong> a category, hiding its site list, footer, and "go to" link while keeping the header visible. Click again to expand. This is useful for reducing clutter when you have many categories. The collapsed state is saved automatically.</p>
 
 <div class="img-wrap">
   <img src="images/markuphero-69a0af2b7d74e6bc256fc10e (3).jpg" alt="Category name">
@@ -346,6 +356,7 @@
   <li><strong>Copy URLs</strong> &mdash; Copy all selected sites' URLs to your clipboard, one per line.</li>
   <li><strong>Consolidate URLs</strong> &mdash; Merge duplicate URLs across categories.</li>
   <li><strong>Refresh Names</strong> &mdash; Re-fetch page titles for all selected sites.</li>
+  <li><strong>Fetch Descriptions</strong> &mdash; Fetch meta descriptions from the web for all selected sites and store them as notes.</li>
   <li><strong>Delete Selected</strong> &mdash; Delete all selected sites.</li>
 </ul>
 
@@ -445,16 +456,45 @@
   <li><strong>Reset</strong> &mdash; Clear all data and start fresh. <em>Use with caution!</em></li>
 </ul>
 
-<h3>Category Visibility</h3>
-<div class="img-wrap">
-  <img src="images/markuphero-69a0b3237d74e6bc256fc19e.jpg" alt="Settings - Category Visibility">
-  <div class="img-caption">The Category Visibility section lets you show or hide individual categories. You can also drag to reorder them.</div>
-</div>
-
-<p>Toggle categories on/off to control which ones are visible on the dashboard. Use the drag handles to reorder categories. Hidden categories are not deleted &mdash; they're simply not displayed.</p>
+<h3>Copy All URLs</h3>
+<ul>
+  <li><strong>Copy All URLs</strong> &mdash; Toggle this on to show a "Copy All" button in the settings that copies every URL from the current workspace to your clipboard.</li>
+</ul>
 
 <div class="tip">
   <strong>Tip:</strong> Regularly export your data as a JSON backup. This protects against accidental data loss and lets you transfer your setup to another computer.
+</div>
+
+<a class="back-top" href="#overview">&uarr; back to top</a>
+
+<!-- ==================== BIRD'S-EYE VIEW ==================== -->
+<h2 id="birdseye">Bird&rsquo;s-Eye View</h2>
+<p>Bird&rsquo;s-Eye View shows <strong>all workspaces</strong> stacked vertically on a single page. Each workspace appears as a labelled section with its own horizontal row of category cards. This is ideal for getting a panoramic overview of everything, especially on large screens.</p>
+
+<h3>Activating Bird&rsquo;s-Eye View</h3>
+<p>Click the <strong>stacked-rectangles icon</strong> in the header (between the workspace selector and the theme toggle). The icon highlights when the mode is active. Click again to return to the normal single-workspace view.</p>
+
+<h3>Workspace Sections</h3>
+<p>Each workspace becomes a collapsible section with a header showing the workspace name and category count:</p>
+<ul>
+  <li><strong>Click the workspace header</strong> to collapse or expand that section.</li>
+  <li><strong>Click anywhere inside a workspace section</strong> to set it as the <em>active workspace</em>. The active workspace&rsquo;s name is highlighted in the accent colour and is the target for keyboard shortcuts like <kbd>Option</kbd> + <kbd>&larr;</kbd> / <kbd>&rarr;</kbd>.</li>
+</ul>
+
+<h3>Navigation in Bird&rsquo;s-Eye View</h3>
+<ul>
+  <li><kbd>Option</kbd> + <kbd>1</kbd>&ndash;<kbd>9</kbd> scrolls to workspace 1&ndash;9 and sets it active (instead of switching).</li>
+  <li><kbd>Option</kbd> + <kbd>0</kbd> scrolls to the inbox category and flash-highlights it.</li>
+  <li><kbd>Option</kbd> + <kbd>&uarr;</kbd> / <kbd>&darr;</kbd> moves the active workspace indicator up or down and scrolls to it.</li>
+  <li><kbd>Option</kbd> + <kbd>&larr;</kbd> / <kbd>&rarr;</kbd> scrolls the active workspace&rsquo;s category row horizontally.</li>
+  <li>Clicking a workspace in the <strong>workspace selector dropdown</strong> scrolls to that section (instead of switching).</li>
+</ul>
+
+<h3>Search in Bird&rsquo;s-Eye View</h3>
+<p>While searching, Bird&rsquo;s-Eye View temporarily switches to a flat cross-workspace results list. When you clear the search, the stacked view is restored.</p>
+
+<div class="tip">
+  <strong>Tip:</strong> The Bird&rsquo;s-Eye View toggle state and collapsed workspace sections are saved automatically and persist across sessions.
 </div>
 
 <a class="back-top" href="#overview">&uarr; back to top</a>
@@ -472,16 +512,32 @@
   </thead>
   <tbody>
     <tr style="border-bottom:1px solid #eee;">
-      <td style="padding:8px 12px;"><kbd>Option</kbd> + <kbd>1</kbd> &ndash; <kbd>9</kbd></td>
-      <td style="padding:8px 12px;">Switch to workspace 1 through 9</td>
+      <td style="padding:8px 12px;"><kbd>Option</kbd> + <kbd>1</kbd>&ndash;<kbd>9</kbd></td>
+      <td style="padding:8px 12px;">Switch to workspace 1&ndash;9 (in Bird&rsquo;s-Eye View: scroll to workspace)</td>
     </tr>
     <tr style="border-bottom:1px solid #eee;">
-      <td style="padding:8px 12px;"><kbd>Cmd</kbd> + <kbd>Option</kbd> + <kbd>1</kbd> &ndash; <kbd>9</kbd></td>
-      <td style="padding:8px 12px;">Switch to workspace 1 through 9 (alternative)</td>
+      <td style="padding:8px 12px;"><kbd>Cmd</kbd> + <kbd>Option</kbd> + <kbd>1</kbd>&ndash;<kbd>9</kbd></td>
+      <td style="padding:8px 12px;">Switch to workspace 1&ndash;9 (alternative)</td>
+    </tr>
+    <tr style="border-bottom:1px solid #eee;">
+      <td style="padding:8px 12px;"><kbd>Option</kbd> + <kbd>0</kbd></td>
+      <td style="padding:8px 12px;">Jump to inbox category (scrolls and flash-highlights)</td>
+    </tr>
+    <tr style="border-bottom:1px solid #eee;">
+      <td style="padding:8px 12px;"><kbd>Option</kbd> + <kbd>&uarr;</kbd> / <kbd>&darr;</kbd></td>
+      <td style="padding:8px 12px;">Move active workspace up/down (Bird&rsquo;s-Eye View); switch workspace (normal)</td>
+    </tr>
+    <tr style="border-bottom:1px solid #eee;">
+      <td style="padding:8px 12px;"><kbd>Option</kbd> + <kbd>&larr;</kbd> / <kbd>&rarr;</kbd></td>
+      <td style="padding:8px 12px;">Scroll categories horizontally in the active workspace</td>
     </tr>
     <tr style="border-bottom:1px solid #eee;">
       <td style="padding:8px 12px;"><kbd>/</kbd> or <kbd>Cmd</kbd> + <kbd>K</kbd></td>
       <td style="padding:8px 12px;">Focus the search bar</td>
+    </tr>
+    <tr style="border-bottom:1px solid #eee;">
+      <td style="padding:8px 12px;"><kbd>Cmd</kbd> + <kbd>Z</kbd></td>
+      <td style="padding:8px 12px;">Undo last destructive operation (delete, move, reorder)</td>
     </tr>
     <tr style="border-bottom:1px solid #eee;">
       <td style="padding:8px 12px;"><kbd>Escape</kbd></td>

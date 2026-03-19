@@ -2,7 +2,7 @@
 
 **Version:** 1.0.0
 **Chrome Extension:** Manifest V3
-**Last Updated:** 2026-02-15
+**Last Updated:** 2026-03-19
 
 ---
 
@@ -26,14 +26,18 @@
 Tab Manager Pro is a Chrome extension that helps users organize bookmarks and notes into visual, draggable categories. It replaces the default new tab page with a customizable dashboard.
 
 ### Key Capabilities
-- **Category Management**: Create, edit, delete, and reorder categories
-- **Site/Note Management**: Add URLs, bulk import, create text notes
+- **Workspaces**: Organize categories into separate workspace groups
+- **Bird's-Eye View**: Toggle an all-workspaces panoramic view (stacked vertically with collapsible sections)
+- **Category Management**: Create, edit, delete, reorder, and collapse/expand categories
+- **Site/Note Management**: Add URLs (multiple at once), bulk import, create text notes
 - **Drag & Drop**: Reorder items and categories with visual feedback
-- **Multi-Select Mode**: Select multiple items for bulk operations
-- **Search**: Real-time search across categories and items
+- **Multi-Select Mode**: Select multiple items for bulk operations (move, copy, delete, consolidate, refresh names, fetch descriptions)
+- **Search**: Real-time search across category names, site names, URLs, and note text
+- **Quick Add**: One-click save of the current page to a designated inbox category via the browser toolbar icon
+- **Save All Open Tabs**: Snapshot all browser tabs into a new category with one click
 - **Undo System**: Snapshot-based undo (Ctrl/Cmd+Z) for destructive operations
 - **Browser Import**: Import from open tabs or bookmarks
-- **Themes**: Light/dark mode with customizable layouts
+- **Themes**: Light/dark mode with customizable layouts (column or kanban)
 - **Export/Import**: JSON and HTML export for backup and portability
 
 ---
@@ -75,17 +79,23 @@ const ModuleName = (() => {
 ```
 tab-manager-extension/
 ├── manifest.json              # Chrome extension configuration (Manifest V3)
-├── newtab.html               # Main HTML structure
+├── newtab.html               # Main HTML structure (new-tab override page)
+├── help.html                 # User guide (opened via ? button)
+├── CLAUDE.md                 # Project guide for AI-assisted development
+├── DOCUMENTATION.md          # This file (technical documentation)
+├── README.md                 # Project overview and quick-start
 ├── js/
-│   ├── newtab.js            # Main application controller (orchestrates everything)
-│   ├── storage.js           # Chrome storage API wrapper, import/export
-│   ├── utils.js             # Helper functions (UUID, URL parsing, etc.)
+│   ├── newtab.js            # Main application controller (~5000 lines)
+│   ├── storage.js           # Chrome storage API wrapper, import/export, validation
+│   ├── utils.js             # Helper functions (UUID, URL parsing, favicons, etc.)
 │   ├── dragdrop.js          # HTML5 Drag & Drop API implementation
-│   └── undo.js              # Snapshot-based undo system
+│   ├── undo.js              # Snapshot-based undo system
+│   └── background.js        # Service worker for Quick Add (browser toolbar icon)
 ├── css/
-│   ├── styles.css           # Main styles (layout, components, interactions)
+│   ├── styles.css           # Main styles (layout, components, bird's-eye, interactions)
 │   └── themes.css           # CSS variables for light/dark themes
-└── DOCUMENTATION.md         # This file
+├── icons/                    # Extension icons (16, 48, 128px)
+└── images/                   # Screenshots for help.html
 ```
 
 ### Load Order (Important!)
@@ -112,12 +122,21 @@ Scripts are loaded in this specific order in `newtab.html`:
 
 ```javascript
 {
+  workspaces: [
+    {
+      id: "ws_abc123",             // Unique identifier
+      name: "Work",                // Display name
+      order: 0                     // Sort order (0-indexed)
+    }
+  ],
   categories: [
     {
       id: "cat_abc123",           // Unique identifier
       name: "Work Sites",          // Display name
       icon: "💼",                  // Emoji icon
       order: 0,                    // Sort order (0-indexed)
+      workspaceId: "ws_abc123",   // Parent workspace ID
+      viewMode: "list",           // "list" | "grid" (per-category)
       sites: [                     // Array of sites/notes
         {
           id: "site_xyz789",       // Unique identifier
@@ -145,7 +164,11 @@ Scripts are loaded in this specific order in `newtab.html`:
     columns: 3,                  // Number of columns (2-4)
     showSiteCount: true,         // Show item count badges
     layoutMode: "column",        // "column" | "kanban"
-    hiddenCategories: []         // Array of hidden category IDs
+    currentWorkspace: "ws_abc",  // Active workspace ID
+    inboxCategoryId: "",         // Quick Add inbox target
+    birdsEyeView: false,         // Bird's-eye view toggle
+    collapsedWorkspaces: [],     // Collapsed workspace IDs (bird's-eye)
+    hiddenCategories: []         // Array of collapsed category IDs
   }
 }
 ```
@@ -163,16 +186,19 @@ Scripts are loaded in this specific order in `newtab.html`:
 
 ### 1. newtab.js - Main Application Controller
 
-**Location:** `js/newtab.js` (~2400 lines)
+**Location:** `js/newtab.js` (~5000 lines)
 
 **Responsibilities:**
 - Application state management (`appData`)
-- UI rendering (categories, sites, notes)
+- UI rendering (categories, sites, notes, workspaces)
+- Bird's-eye view (all-workspaces stacked layout)
 - Event handling (clicks, keyboard shortcuts)
 - Modal dialogs (site/category editor, settings)
-- Search functionality
-- Select mode (multi-select)
+- Search functionality (names, URLs, notes, category names)
+- Select mode (multi-select with bulk operations)
 - Browser picker (import tabs/bookmarks)
+- Save all open tabs feature
+- Category collapse/expand
 
 **Key Functions:**
 
@@ -198,6 +224,8 @@ let editingCategoryId = null;    // Category being edited in modal
 let contextSiteId = null;        // Right-click context menu state
 let contextCatId = null;
 let searchQuery = '';            // Current search query
+let skipScrollRestore = false;   // When true, saveAndRefresh skips scroll restore
+let localSavePending = 0;        // Pending saves counter (suppresses onChanged re-renders)
 let selectMode = false;          // Multi-select mode active
 let selectedSites = new Set();   // Set of "catId::siteId" strings
 let anchorKey = null;            // Anchor for range selection
@@ -344,6 +372,22 @@ saveAndRefresh();
 // → handleUndo() restores the snapshot
 ```
 
+### 6. background.js - Service Worker (Quick Add)
+
+**Location:** `js/background.js`
+
+**Responsibilities:**
+- Handles browser toolbar icon clicks (Quick Add)
+- Saves the current tab's URL and title to the designated inbox category
+- Runs as a Manifest V3 service worker (no persistent background page)
+
+**How It Works:**
+1. User clicks the Tab Manager Pro icon in the browser toolbar
+2. `chrome.action.onClicked` fires in the service worker
+3. Gets the active tab's URL and title
+4. Loads `appData` from storage, finds the inbox category
+5. Adds the site and saves back to storage
+
 ---
 
 ## Key Features
@@ -428,9 +472,10 @@ saveAndRefresh();
    ```
 
 2. **Matching Logic:**
-   - Categories: Match by name
+   - Categories: Match by name (when matched, all sites in that category are shown)
    - Sites: Match by name OR URL
    - Notes: Match by label OR text content
+   - In bird's-eye view, search temporarily shows a flat cross-workspace list
 
 3. **Visual Feedback:**
    - Highlights matches with `.search-highlight` class
@@ -517,9 +562,57 @@ function handleUndo() {
 
 **UX Rationale:** Prevents duplicate sites when user has multiple tabs/bookmarks for same domain.
 
-### 6. Export/Import
+### 6. Workspaces
 
-**Files:** `storage.js` (lines 350-468)
+**Files:** `newtab.js`, `storage.js`
+
+**How It Works:**
+- Workspaces are top-level groups that contain categories
+- Each category has a `workspaceId` linking it to its parent workspace
+- The workspace selector dropdown allows switching, creating, renaming, duplicating, and deleting workspaces
+- Keyboard shortcuts (Option+1-9) switch between workspaces
+- Workspaces can be reordered and duplicated (deep-copies all categories and sites)
+
+### 7. Bird's-Eye View
+
+**Files:** `newtab.js`, `css/styles.css`
+
+**How It Works:**
+1. Toggle via `#birdsEyeToggle` button or `toggleBirdsEyeView()`
+2. `renderAll()` branches: in bird's-eye mode, it calls `buildWorkspaceSection()` for each workspace
+3. Each workspace section has a collapsible header and its own `.categories-grid`
+4. Clicking a section sets the "active workspace" (accent-highlighted, target for keyboard shortcuts)
+5. Search temporarily exits bird's-eye mode for a flat cross-workspace view
+
+**Key Functions:** `buildWorkspaceSection()`, `toggleBirdsEyeView()`, `toggleWorkspaceCollapse()`, `setActiveWorkspace()`, `flashHighlightCard()`
+
+**Scroll Preservation:** `saveAndRefresh()` captures per-grid `scrollLeft`, per-card `scrollTop`, and `window.scrollY`, restoring them after DOM rebuild using `scrollTo({ behavior: 'instant' })`.
+
+**Important:** The `localSavePending` counter prevents `chrome.storage.onChanged` from triggering redundant re-renders that would destroy scroll positions.
+
+### 8. Category Collapse/Expand
+
+**Files:** `newtab.js`, `css/styles.css`
+
+**How It Works:**
+- Each category header has a chevron button (`.category-collapse-btn`)
+- Clicking it toggles `.category-collapsed` CSS class on the card, hiding sites-list, footer, and go-to link
+- Uses `Storage.saveData` directly (no full re-render) to avoid scroll disruption
+- Collapsed state is persisted in `appData.settings.hiddenCategories` array
+
+### 9. Save All Open Tabs
+
+**Files:** `newtab.js`
+
+**How It Works:**
+- Click the floppy-disk icon (`#saveAllTabsBtn`) in the header
+- Queries all open tabs via `chrome.tabs.query({})`
+- Creates a new category (named with timestamp) in the current workspace
+- Populates it with all tab URLs and titles
+
+### 10. Export/Import
+
+**Files:** `storage.js`
 
 **Export Formats:**
 
@@ -885,19 +978,13 @@ e.stopPropagation();
 1. **Keyboard Navigation:**
    - Arrow keys to navigate between tiles
    - Tab to focus categories
-   - Space to select/deselect
 
 2. **Categories:**
    - Nested subcategories
    - Category colors/themes
    - Pin categories to top
 
-3. **Sites:**
-   - Custom sort order (manual, alphabetical, date added, most visited)
-   - Duplicate detection and merging
-   - Open all sites in category (new tabs)
-
-4. **Search:**
+3. **Search:**
    - Search by tag/label
    - Recent searches dropdown
    - Search operators (category:work, type:note)
@@ -1047,7 +1134,12 @@ If you need to add fields or change structure:
 
 | Shortcut | Action | Context |
 |----------|--------|---------|
-| **Cmd/Ctrl + K** | Focus search | Global |
+| **Option/Alt + 1-9** | Switch to workspace 1-9 (bird's-eye: scroll to workspace) | Global |
+| **Cmd/Ctrl + Option/Alt + 1-9** | Switch to workspace 1-9 (alternative) | Global |
+| **Option/Alt + 0** | Jump to inbox category (scroll + flash highlight) | Global |
+| **Option/Alt + Up/Down** | Move active workspace up/down | Global |
+| **Option/Alt + Left/Right** | Scroll categories horizontally | Global |
+| **/ or Cmd/Ctrl + K** | Focus search | Global |
 | **ESC** | Exit select mode, clear search, close menus | Global |
 | **Cmd/Ctrl + Z** | Undo last operation | Global (not in inputs) |
 | **Enter** | Toggle selection (select mode) | On focused tile |
@@ -1092,7 +1184,7 @@ This documentation covers the architecture, structure, and maintenance of Tab Ma
 3. **Chrome Extension Docs**: https://developer.chrome.com/docs/extensions/
 4. **Git history**: See commit messages for context on changes
 
-**Last Updated:** 2026-02-15
+**Last Updated:** 2026-03-19
 **Maintained By:** Claude & User
 **License:** (Add your license here)
 
