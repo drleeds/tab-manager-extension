@@ -3443,6 +3443,7 @@ function closeModal(id) {
 // Save and re-render
 // =========================================================
 function saveAndRefresh() {
+  const container = document.getElementById('categoriesGrid');
   // Automatically capture ALL scroll positions before re-rendering
   const scrollState = {};
   const isBirdsEye = appData.settings.birdsEyeView;
@@ -3487,7 +3488,6 @@ function saveAndRefresh() {
   Storage.saveImmediate(appData).then(Utils.flashSaveIndicator).catch(console.error);
 
   // Pin container height to prevent page collapse during DOM rebuild
-  const container = document.getElementById('categoriesGrid');
   const pinHeight = container ? container.offsetHeight : 0;
   if (container && pinHeight > 0) {
     container.style.minHeight = pinHeight + 'px';
