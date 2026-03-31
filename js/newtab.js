@@ -315,6 +315,39 @@ async function saveAllOpenTabs() {
 }
 
 // =========================================================
+// Sort browser tabs by most-recently-used
+// =========================================================
+async function sortTabsByRecent() {
+  if (typeof chrome === 'undefined' || !chrome.tabs) return;
+
+  const btn = document.getElementById('sortTabsRecentBtn');
+
+  try {
+    const tabs = await chrome.tabs.query({ currentWindow: true });
+
+    const pinned = tabs.filter(t => t.pinned);
+    const unpinned = tabs.filter(t => !t.pinned);
+
+    if (unpinned.length <= 1) return;
+
+    // Sort ascending by lastAccessed (oldest first = leftmost, newest = rightmost)
+    unpinned.sort((a, b) => (a.lastAccessed || 0) - (b.lastAccessed || 0));
+
+    // Move each unpinned tab sequentially (indices shift as tabs move)
+    const startIndex = pinned.length;
+    for (let i = 0; i < unpinned.length; i++) {
+      await chrome.tabs.move(unpinned[i].id, { index: startIndex + i });
+    }
+
+    // Brief visual feedback
+    btn.style.color = 'var(--accent)';
+    setTimeout(() => { btn.style.color = ''; }, 800);
+  } catch (err) {
+    console.error('Sort tabs by recent failed:', err);
+  }
+}
+
+// =========================================================
 // Build a category card DOM element
 // =========================================================
 function buildCategoryCard(cat) {
@@ -4192,6 +4225,9 @@ function bindGlobalEvents() {
 
   // ---- Save all open tabs ----
   document.getElementById('saveAllTabsBtn').addEventListener('click', saveAllOpenTabs);
+
+  // ---- Sort browser tabs by recent ----
+  document.getElementById('sortTabsRecentBtn').addEventListener('click', sortTabsByRecent);
 
   // ---- Search ----
   const searchInput = document.getElementById('searchInput');
