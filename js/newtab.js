@@ -318,6 +318,45 @@ async function saveAllOpenTabs() {
 }
 
 // =========================================================
+// Close All Tabs in All Windows
+// =========================================================
+async function closeAllTabs() {
+  if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.windows) {
+    alert('This feature requires the Chrome extension context.');
+    return;
+  }
+
+  const confirmed = await Utils.confirm(
+    'Close all tabs in all windows? You may want to save your tabs first. This cannot be undone.',
+    'Close All'
+  );
+  if (!confirmed) return;
+
+  const currentTab = (await chrome.tabs.getCurrent());
+  const currentWindowId = currentTab?.windowId;
+
+  // Get all windows
+  const allWindows = await chrome.windows.getAll({ populate: false });
+
+  // Close every other window first
+  for (const win of allWindows) {
+    if (win.id !== currentWindowId) {
+      await chrome.windows.remove(win.id);
+    }
+  }
+
+  // In the current window, close every tab except this one
+  const remainingTabs = await chrome.tabs.query({ windowId: currentWindowId });
+  const tabsToClose = remainingTabs.filter(t => t.id !== currentTab.id);
+  if (tabsToClose.length > 0) {
+    await chrome.tabs.remove(tabsToClose.map(t => t.id));
+  }
+
+  // Ensure the surviving window is focused and in normal state
+  await chrome.windows.update(currentWindowId, { focused: true, state: 'normal' });
+}
+
+// =========================================================
 // Copy All Open Tabs to Clipboard (sorted by most recent)
 // =========================================================
 async function copyAllOpenTabs() {
@@ -4272,6 +4311,9 @@ function bindGlobalEvents() {
 
   // ---- Sort browser tabs by recent ----
   document.getElementById('sortTabsRecentBtn').addEventListener('click', sortTabsByRecent);
+
+  // ---- Close all tabs ----
+  document.getElementById('closeAllTabsBtn').addEventListener('click', closeAllTabs);
 
   // ---- Search ----
   const searchInput = document.getElementById('searchInput');
