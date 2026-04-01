@@ -273,6 +273,9 @@ async function saveAllOpenTabs() {
     return;
   }
 
+  // Sort by most recently accessed first
+  validTabs.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0));
+
   // Build timestamp: Tabs_YYYY-MM-DD_HH-MM-SS
   const now = new Date();
   const pad = (n) => String(n).padStart(2, '0');
@@ -312,6 +315,44 @@ async function saveAllOpenTabs() {
     }
     flashHighlightCard(newCat.id);
   }, 100);
+}
+
+// =========================================================
+// Copy All Open Tabs to Clipboard (sorted by most recent)
+// =========================================================
+async function copyAllOpenTabs() {
+  if (typeof chrome === 'undefined' || !chrome.tabs) {
+    alert('This feature requires the Chrome extension context.');
+    return;
+  }
+
+  const tabs = await chrome.tabs.query({});
+  const validTabs = tabs.filter(t => t.url && (t.url.startsWith('http://') || t.url.startsWith('https://')));
+
+  if (validTabs.length === 0) {
+    alert('No open tabs with valid URLs found.');
+    return;
+  }
+
+  // Sort by most recently accessed first
+  validTabs.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0));
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const lines = validTabs.map(tab => {
+    const d = new Date(tab.lastAccessed || 0);
+    const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const title = tab.title || '';
+    return `${tab.url}\t${title}\t${stamp}`;
+  });
+
+  await navigator.clipboard.writeText(lines.join('\n'));
+
+  // Briefly swap indicator text to "Copied!" then restore
+  const indicator = document.getElementById('saveIndicator');
+  const originalText = indicator ? indicator.textContent : '';
+  if (indicator) indicator.textContent = 'Copied!';
+  Utils.flashSaveIndicator();
+  if (indicator) setTimeout(() => { indicator.textContent = originalText; }, 1500);
 }
 
 // =========================================================
@@ -4225,6 +4266,9 @@ function bindGlobalEvents() {
 
   // ---- Save all open tabs ----
   document.getElementById('saveAllTabsBtn').addEventListener('click', saveAllOpenTabs);
+
+  // ---- Copy all open tabs to clipboard ----
+  document.getElementById('copyAllTabsBtn').addEventListener('click', copyAllOpenTabs);
 
   // ---- Sort browser tabs by recent ----
   document.getElementById('sortTabsRecentBtn').addEventListener('click', sortTabsByRecent);
