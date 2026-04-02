@@ -337,7 +337,7 @@ input, select, textarea {
 }
 
 .workspace-menu {
-  min-width: 180px;
+  min-width: 280px;
   background: var(--bg-modal);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -363,6 +363,11 @@ input, select, textarea {
 
 .workspace-menu-item.current {
   background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.workspace-menu .move-menu-row.current .move-menu-cat-label {
   color: var(--accent);
   font-weight: 500;
 }

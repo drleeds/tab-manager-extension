@@ -2285,15 +2285,28 @@ function handleDrop(type, sourceId, sourceCatId, targetId, targetCatId) {
     saveAndRefresh();
   } else if (type === 'category') {
     Undo.saveSnapshot('Reorder category', appData);
-    const sourceIndex = appData.categories.findIndex(c => c.id === sourceId);
-    const targetIndex = appData.categories.findIndex(c => c.id === targetId);
-    if (sourceIndex === -1 || targetIndex === -1) return;
+    const sourceCat = getCatById(sourceId);
+    const targetCat = getCatById(targetId);
+    if (!sourceCat || !targetCat) return;
+    if (sourceCat.workspaceId !== targetCat.workspaceId) return;
 
-    const [category] = appData.categories.splice(sourceIndex, 1);
-    // Adjust target index if we removed from before it
-    const adjustedIndex = sourceIndex < targetIndex ? targetIndex - 1 : targetIndex;
-    appData.categories.splice(adjustedIndex, 0, category);
-    reindexCategories();
+    // Work within the workspace scope, sorted by display order
+    const wsCategories = appData.categories
+      .filter(c => c.workspaceId === sourceCat.workspaceId)
+      .sort((a, b) => a.order - b.order);
+
+    const sourceIdx = wsCategories.findIndex(c => c.id === sourceId);
+    const targetIdx = wsCategories.findIndex(c => c.id === targetId);
+    if (sourceIdx === -1 || targetIdx === -1) return;
+
+    wsCategories.splice(sourceIdx, 1);
+    const newTargetIdx = wsCategories.findIndex(c => c.id === targetId);
+    // Insert after target when dragging forward, before when dragging backward
+    const insertIdx = sourceIdx < targetIdx ? newTargetIdx + 1 : newTargetIdx;
+    wsCategories.splice(insertIdx, 0, sourceCat);
+
+    // Reindex only this workspace's categories
+    wsCategories.forEach((c, i) => c.order = i);
     saveAndRefresh();
   }
 }
@@ -3938,15 +3951,24 @@ async function renameWorkspace(workspaceId, newName) {
   saveAndRefresh();
 }
 
-function moveCategoryToWorkspace(catId, targetWorkspaceId) {
+function moveCategoryToWorkspace(catId, targetWorkspaceId, position) {
   const cat = getCatById(catId);
   const targetWorkspace = getWorkspaceById(targetWorkspaceId);
   if (!cat || !targetWorkspace) return;
 
-  if (cat.workspaceId === targetWorkspaceId) return;
-
   Undo.saveSnapshot('Move category to workspace', appData);
   cat.workspaceId = targetWorkspaceId;
+
+  // Set order to place at top or bottom of target workspace
+  const siblings = appData.categories.filter(c => c.workspaceId === targetWorkspaceId && c.id !== catId);
+  if (position === 'top') {
+    const minOrder = siblings.length ? Math.min(...siblings.map(c => c.order)) : 0;
+    cat.order = minOrder - 1;
+  } else {
+    const maxOrder = siblings.length ? Math.max(...siblings.map(c => c.order)) : 0;
+    cat.order = maxOrder + 1;
+  }
+
   saveAndRefresh();
 }
 
@@ -3979,7 +4001,7 @@ function duplicateWorkspace(workspaceId) {
   saveAndRefresh();
 }
 
-function copyCategoryToWorkspace(catId, targetWorkspaceId) {
+function copyCategoryToWorkspace(catId, targetWorkspaceId, position) {
   const cat = getCatById(catId);
   const targetWorkspace = getWorkspaceById(targetWorkspaceId);
   if (!cat || !targetWorkspace) return;
@@ -3990,6 +4012,16 @@ function copyCategoryToWorkspace(catId, targetWorkspaceId) {
   copy.id = Utils.generateId();
   copy.workspaceId = targetWorkspaceId;
   copy.sites.forEach(s => { s.id = Utils.generateId(); });
+
+  // Set order to place at top or bottom of target workspace
+  const siblings = appData.categories.filter(c => c.workspaceId === targetWorkspaceId);
+  if (position === 'top') {
+    const minOrder = siblings.length ? Math.min(...siblings.map(c => c.order)) : 0;
+    copy.order = minOrder - 1;
+  } else {
+    const maxOrder = siblings.length ? Math.max(...siblings.map(c => c.order)) : 0;
+    copy.order = maxOrder + 1;
+  }
 
   appData.categories.push(copy);
   saveAndRefresh();
@@ -4259,30 +4291,75 @@ function showWorkspaceMenu(button, catId) {
   const currentCat = getCatById(catId);
 
   sorted.forEach(ws => {
-    const item = document.createElement('button');
-    item.className = 'workspace-menu-item';
+    const row = document.createElement('div');
+    row.className = 'move-menu-row';
     if (ws.id === currentCat.workspaceId) {
-      item.classList.add('current');
+      row.classList.add('current');
     }
-    item.textContent = ws.name;
-    item.addEventListener('click', () => {
+
+    const labelEl = document.createElement('span');
+    labelEl.className = 'move-menu-cat-label';
+    labelEl.textContent = ws.name;
+
+    const btnGroup = document.createElement('div');
+    btnGroup.className = 'move-menu-pos-btns';
+
+    const topBtn = document.createElement('button');
+    topBtn.className = 'move-menu-pos-btn';
+    topBtn.title = 'Place at front of workspace';
+    topBtn.textContent = '↑ Top';
+    topBtn.addEventListener('click', () => {
       if (mode === 'copy') {
-        copyCategoryToWorkspace(catId, ws.id);
+        copyCategoryToWorkspace(catId, ws.id, 'top');
       } else {
-        moveCategoryToWorkspace(catId, ws.id);
+        moveCategoryToWorkspace(catId, ws.id, 'top');
       }
       menu.remove();
     });
-    menu.appendChild(item);
+
+    const botBtn = document.createElement('button');
+    botBtn.className = 'move-menu-pos-btn';
+    botBtn.title = 'Place at back of workspace';
+    botBtn.textContent = '↓ Bottom';
+    botBtn.addEventListener('click', () => {
+      if (mode === 'copy') {
+        copyCategoryToWorkspace(catId, ws.id, 'bottom');
+      } else {
+        moveCategoryToWorkspace(catId, ws.id, 'bottom');
+      }
+      menu.remove();
+    });
+
+    btnGroup.append(topBtn, botBtn);
+    row.append(labelEl, btnGroup);
+    menu.appendChild(row);
   });
 
-  // Position menu below button
-  const rect = button.getBoundingClientRect();
+  // Position menu below button, clamped to viewport
   menu.style.position = 'absolute';
-  menu.style.top = `${rect.bottom + 4}px`;
-  menu.style.left = `${rect.left}px`;
-
+  menu.style.visibility = 'hidden';
   document.body.appendChild(menu);
+
+  const rect = button.getBoundingClientRect();
+  const menuRect = menu.getBoundingClientRect();
+  let top = rect.bottom + 4;
+  let left = rect.left;
+
+  // Clamp right edge
+  if (left + menuRect.width > window.innerWidth - 8) {
+    left = window.innerWidth - menuRect.width - 8;
+  }
+  // Clamp bottom edge — flip above button if needed
+  if (top + menuRect.height > window.innerHeight - 8) {
+    top = rect.top - menuRect.height - 4;
+  }
+  // Clamp left/top minimums
+  if (left < 8) left = 8;
+  if (top < 8) top = 8;
+
+  menu.style.top = `${top}px`;
+  menu.style.left = `${left}px`;
+  menu.style.visibility = '';
 
   // Close on click outside
   const closeMenu = (e) => {
