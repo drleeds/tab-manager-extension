@@ -235,6 +235,44 @@
       </svg>
       Close tab
     </button>
+    <button class="context-item" data-action="live-move-to-window" style="display:none">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/>
+        <polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/>
+        <line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>
+      </svg>
+      Move to window
+    </button>
+    <button class="context-item" data-action="live-copy-to-window" style="display:none">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+      Copy to window
+    </button>
+    <button class="context-item" data-action="live-move-to-top" style="display:none">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="18 15 12 9 6 15"/>
+        <line x1="12" y1="9" x2="12" y2="21"/>
+        <line x1="5" y1="3" x2="19" y2="3"/>
+      </svg>
+      Move to top
+    </button>
+    <button class="context-item" data-action="live-move-to-bottom" style="display:none">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="18 9 12 15 6 9"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+        <line x1="5" y1="21" x2="19" y2="21"/>
+      </svg>
+      Move to bottom
+    </button>
+    <button class="context-item" data-action="live-pin-tab" style="display:none">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 4.5L18.5 8 14 13.5V17l-4-4v-3.5L5.5 5"/>
+        <line x1="2" y1="2" x2="22" y2="22"/>
+      </svg>
+      <span class="live-pin-label">Pin tab</span>
+    </button>
     <button class="context-item" data-action="open-new-tab">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -303,7 +341,7 @@
       </svg>
       Move to bottom
     </button>
-    <div class="context-divider"></div>
+    <div class="context-divider context-divider-delete"></div>
     <button class="context-item context-item--danger" data-action="delete">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
@@ -314,6 +352,46 @@
 
   <!-- Move to Category submenu -->
   <div id="moveMenu" class="context-menu" hidden></div>
+
+  <!-- Live Tabs: Move/Copy to Window submenu -->
+  <div id="liveWindowMenu" class="context-menu" hidden></div>
+
+  <!-- Live Tabs: Window-level context menu -->
+  <div id="windowContextMenu" class="context-menu" hidden>
+    <button class="context-item" data-action="win-focus">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+        <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+      </svg>
+      Focus window
+    </button>
+    <button class="context-item" data-action="win-new">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      New window
+    </button>
+    <button class="context-item" data-action="win-merge">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="16 3 21 3 21 8"/>
+        <line x1="4" y1="20" x2="21" y2="3"/>
+        <polyline points="21 16 21 21 16 21"/>
+        <line x1="15" y1="15" x2="21" y2="21"/>
+        <line x1="4" y1="4" x2="9" y2="9"/>
+      </svg>
+      Merge into window
+    </button>
+    <div class="context-divider"></div>
+    <button class="context-item context-item--danger" data-action="win-close">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+      Close window
+    </button>
+  </div>
+
+  <!-- Live Tabs: Merge-into submenu -->
+  <div id="mergeMenu" class="context-menu" hidden></div>
 
   <!-- Modal: Add/Edit Site -->
   <div id="siteModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="siteModalTitle">

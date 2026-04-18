@@ -16,6 +16,7 @@ let editingCatId = null;   // target category for new/edit site
 let editingCategoryId = null; // id of category being edited (null = new)
 let contextSiteId = null;  // site id for context menu
 let contextCatId = null;   // category id for context menu
+let contextWindowId = null; // window id for live window context menu
 let searchQuery = '';
 // When true, saveAndRefresh() skips its scroll restoration (navigation code will handle scrolling)
 let skipScrollRestore = false;
@@ -26,6 +27,7 @@ let localSavePending = 0;
 const LIVE_TABS_ID = '__live_tabs__';
 let liveTabsData = null;       // { categories: [...] } — ephemeral, never saved
 let liveTabsListeners = null;  // array of listener removers
+let liveTabsDragPaused = false; // true while dragging live tabs (suppress auto-refresh)
 
 // Select mode state
 let selectMode = false;
@@ -160,6 +162,22 @@ function renderAll() {
       const card = buildLiveTabCard(cat);
       container.appendChild(card);
     });
+
+    // "New Window" button card
+    if (!searchQuery) {
+      const newWinCard = document.createElement('div');
+      newWinCard.className = 'category-card live-new-window-card';
+      newWinCard.innerHTML = `<button class="live-new-window-btn" title="Open a new browser window">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        New Window
+      </button>`;
+      newWinCard.querySelector('.live-new-window-btn').addEventListener('click', () => {
+        chrome.windows.create({ url: 'about:blank' });
+      });
+      container.appendChild(newWinCard);
+    }
 
     applySearch(searchQuery);
   } else {
@@ -1267,12 +1285,22 @@ function showContextMenu(x, y, siteId, catId) {
   const isLive = !!(site && site.tabId);
 
   // Toggle visibility of live-only vs regular-only items
-  menu.querySelectorAll('[data-action="switch-to-tab"], [data-action="close-tab"]').forEach(el => {
+  menu.querySelectorAll('[data-action="switch-to-tab"], [data-action="close-tab"], [data-action="live-move-to-window"], [data-action="live-copy-to-window"], [data-action="live-move-to-top"], [data-action="live-move-to-bottom"], [data-action="live-pin-tab"]').forEach(el => {
     el.style.display = isLive ? '' : 'none';
   });
   menu.querySelectorAll('[data-action="edit"], [data-action="refresh-favicon"], [data-action="fetch-description"], [data-action="move"], [data-action="copy"], [data-action="move-to-top"], [data-action="move-to-bottom"], [data-action="delete"]').forEach(el => {
     el.style.display = isLive ? 'none' : '';
   });
+  const deleteDivider = menu.querySelector('.context-divider-delete');
+  if (deleteDivider) deleteDivider.style.display = isLive ? 'none' : '';
+
+  // Update pin/unpin label
+  if (isLive) {
+    const pinLabel = menu.querySelector('.live-pin-label');
+    if (pinLabel) {
+      pinLabel.textContent = site.isPinned ? 'Unpin tab' : 'Pin tab';
+    }
+  }
 
   // Hide "Fetch description" for note-type items
   const fetchDescItem = menu.querySelector('[data-action="fetch-description"]');
@@ -1296,6 +1324,9 @@ function showContextMenu(x, y, siteId, catId) {
 function hideContextMenu() {
   document.getElementById('contextMenu').hidden = true;
   document.getElementById('moveMenu').hidden = true;
+  document.getElementById('liveWindowMenu').hidden = true;
+  document.getElementById('windowContextMenu').hidden = true;
+  document.getElementById('mergeMenu').hidden = true;
 }
 
 // =========================================================
@@ -2309,6 +2340,32 @@ function handleDrop(type, sourceId, sourceCatId, targetId, targetCatId) {
     const sourceLive = (liveTabsData?.categories || []).find(c => c.id === sourceCatId);
     const targetCat = appData.categories.find(c => c.id === targetCatId);
 
+    // Check if target is also a live tab category
+    const targetLive = (liveTabsData?.categories || []).find(c => c.id === targetCatId);
+
+    if (sourceLive && targetLive) {
+      // Live-to-Live: move tab between/within windows via Chrome API
+      const liveSite = sourceLive.sites.find(s => s.id === sourceId);
+      if (!liveSite) return;
+
+      // Calculate target index from target tile position
+      let targetIndex = -1; // default: end of window
+      if (targetId) {
+        const targetSite = targetLive.sites.find(s => s.id === targetId);
+        if (targetSite) {
+          // Get the actual tab index in the window
+          targetIndex = targetLive.sites.findIndex(s => s.id === targetId);
+        }
+      }
+
+      // Use Chrome API to move the tab
+      chrome.tabs.move(liveSite.tabId, {
+        windowId: targetLive.windowId,
+        index: targetIndex >= 0 ? targetIndex : -1
+      }).catch(console.error);
+      return;
+    }
+
     if (sourceLive && targetCat) {
       // Drag from Live Tabs to a regular category = save that tab
       const liveSite = sourceLive.sites.find(s => s.id === sourceId);
@@ -2336,7 +2393,7 @@ function handleDrop(type, sourceId, sourceCatId, targetId, targetCatId) {
       return;
     }
 
-    // Don't allow drops INTO live tab categories
+    // Don't allow drops INTO live tab categories from saved
     if (!targetCat) return;
 
     Undo.saveSnapshot('Move item', appData);
@@ -3692,6 +3749,14 @@ function buildLiveTabCard(cat) {
 
   header.append(catCb, iconEl, titleEl, countEl, focusBtn);
 
+  // Right-click context menu on window header
+  header.addEventListener('contextmenu', (e) => {
+    if (selectMode) return;
+    e.preventDefault();
+    e.stopPropagation();
+    showWindowContextMenu(e.clientX, e.clientY, cat.windowId);
+  });
+
   // Sites list
   const sitesList = document.createElement('div');
   sitesList.className = 'sites-list';
@@ -3699,13 +3764,23 @@ function buildLiveTabCard(cat) {
 
   const sortedSites = [...cat.sites].sort((a, b) => a.order - b.order);
   sortedSites.forEach(site => {
+    // Drop indicator before each tile (enables drag-and-drop reordering)
+    const indicator = document.createElement('div');
+    indicator.className = 'site-drop-indicator';
+    sitesList.appendChild(indicator);
+
     const tile = buildLiveTabTile(site, cat.id);
     sitesList.appendChild(tile);
   });
 
+  // Trailing drop indicator
+  const lastIndicator = document.createElement('div');
+  lastIndicator.className = 'site-drop-indicator';
+  sitesList.appendChild(lastIndicator);
+
   card.append(header, sitesList);
 
-  // Make sites draggable to regular categories
+  // Make sites draggable (within live tabs and to regular categories)
   sortedSites.forEach(site => {
     const tile = sitesList.querySelector(`[data-site-id="${site.id}"]`);
     if (tile) DragDrop.makeSiteDraggable(tile, site.id, cat.id);
@@ -3840,6 +3915,7 @@ function startLiveTabsListeners() {
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(async () => {
       if (!isLiveTabsActive()) return;
+      if (liveTabsDragPaused) return; // suppress during drag operations
       await loadLiveTabs();
       renderAll();
       DragDrop.init(handleDrop);
@@ -3866,6 +3942,195 @@ function stopLiveTabsListeners() {
   liveTabsListeners.forEach(remove => remove());
   liveTabsListeners = null;
   liveTabsData = null;
+}
+
+// =========================================================
+// Live Tabs: Move/Copy/Reorder via Chrome APIs
+// =========================================================
+
+/**
+ * Show a submenu listing windows (and "New window") for move/copy actions.
+ * @param {HTMLElement} anchorEl — the menu item that triggered this
+ * @param {'move'|'copy'} mode — whether to move or copy the tab
+ */
+function showLiveWindowMenu(anchorEl, mode) {
+  const menu = document.getElementById('liveWindowMenu');
+  menu.innerHTML = '';
+
+  const site = getSiteById(contextCatId, contextSiteId);
+  if (!site || !site.tabId) return;
+
+  const liveCats = liveTabsData?.categories || [];
+
+  // List all windows except the one the tab is currently in
+  liveCats.forEach(cat => {
+    if (cat.windowId === site.windowId && mode === 'move') return; // skip current window for move
+    const row = document.createElement('div');
+    row.className = 'move-menu-row';
+
+    const labelEl = document.createElement('span');
+    labelEl.className = 'move-menu-cat-label';
+    labelEl.textContent = `${cat.icon} ${cat.name}`;
+
+    const btnGroup = document.createElement('div');
+    btnGroup.className = 'move-menu-pos-btns';
+
+    const topBtn = document.createElement('button');
+    topBtn.className = 'move-menu-pos-btn';
+    topBtn.title = 'Place at start of window';
+    topBtn.textContent = '↑ Top';
+    topBtn.addEventListener('click', () => {
+      hideAllContextMenus();
+      liveTabAction(site, cat.windowId, 0, mode);
+    });
+
+    const botBtn = document.createElement('button');
+    botBtn.className = 'move-menu-pos-btn';
+    botBtn.title = 'Place at end of window';
+    botBtn.textContent = '↓ Bottom';
+    botBtn.addEventListener('click', () => {
+      hideAllContextMenus();
+      liveTabAction(site, cat.windowId, -1, mode);
+    });
+
+    btnGroup.append(topBtn, botBtn);
+    row.append(labelEl, btnGroup);
+    menu.appendChild(row);
+  });
+
+  // Divider + New window option
+  const div = document.createElement('div');
+  div.className = 'context-divider';
+  menu.appendChild(div);
+
+  const newWinBtn = document.createElement('button');
+  newWinBtn.className = 'context-item';
+  newWinBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+  </svg> New window`;
+  newWinBtn.addEventListener('click', async () => {
+    hideAllContextMenus();
+    if (mode === 'move') {
+      // Detach tab to a new window
+      chrome.windows.create({ tabId: site.tabId }).catch(console.error);
+    } else {
+      // Copy: create new window with the URL
+      chrome.windows.create({ url: site.url }).catch(console.error);
+    }
+  });
+  menu.appendChild(newWinBtn);
+
+  // Position relative to the anchor item
+  const rect = anchorEl.getBoundingClientRect();
+  const vpW = window.innerWidth;
+  const vpH = window.innerHeight;
+  menu.hidden = false;
+  const mw = menu.offsetWidth;
+  const mh = menu.offsetHeight;
+  const left = rect.right + 4 + mw > vpW ? rect.left - mw - 4 : rect.right + 4;
+  menu.style.left = left + 'px';
+  menu.style.top = Math.max(8, Math.min(rect.top, vpH - mh - 8)) + 'px';
+}
+
+/**
+ * Execute a live tab move or copy action.
+ * @param {Object} site — the live tab site object
+ * @param {number} targetWindowId — target Chrome window ID
+ * @param {number} index — target index (-1 for end)
+ * @param {'move'|'copy'} mode
+ */
+async function liveTabAction(site, targetWindowId, index, mode) {
+  try {
+    if (mode === 'move') {
+      await chrome.tabs.move(site.tabId, { windowId: targetWindowId, index });
+    } else {
+      await chrome.tabs.create({ url: site.url, windowId: targetWindowId, active: false });
+    }
+  } catch (err) {
+    console.error(`Failed to ${mode} tab:`, err);
+  }
+}
+
+/**
+ * Show a submenu listing windows for the "Merge into" action.
+ */
+function showMergeMenu(anchorEl) {
+  const menu = document.getElementById('mergeMenu');
+  menu.innerHTML = '';
+
+  const liveCats = liveTabsData?.categories || [];
+
+  liveCats.forEach(cat => {
+    if (cat.windowId === contextWindowId) return; // skip self
+
+    const btn = document.createElement('button');
+    btn.className = 'context-item';
+    btn.textContent = `${cat.icon} ${cat.name}`;
+    btn.addEventListener('click', async () => {
+      hideAllContextMenus();
+      // Move all tabs from contextWindowId into this window
+      try {
+        const tabs = await chrome.tabs.query({ windowId: contextWindowId });
+        const tabIds = tabs.map(t => t.id);
+        if (tabIds.length > 0) {
+          await chrome.tabs.move(tabIds, { windowId: cat.windowId, index: -1 });
+        }
+      } catch (err) {
+        console.error('Failed to merge windows:', err);
+      }
+    });
+    menu.appendChild(btn);
+  });
+
+  if (menu.children.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'context-item';
+    empty.style.color = 'var(--text-muted)';
+    empty.textContent = 'No other windows';
+    menu.appendChild(empty);
+  }
+
+  // Position
+  const rect = anchorEl.getBoundingClientRect();
+  const vpW = window.innerWidth;
+  const vpH = window.innerHeight;
+  menu.hidden = false;
+  const mw = menu.offsetWidth;
+  const mh = menu.offsetHeight;
+  const left = rect.right + 4 + mw > vpW ? rect.left - mw - 4 : rect.right + 4;
+  menu.style.left = left + 'px';
+  menu.style.top = Math.max(8, Math.min(rect.top, vpH - mh - 8)) + 'px';
+}
+
+/**
+ * Show window-level context menu for a live tab card header.
+ */
+function showWindowContextMenu(x, y, windowId) {
+  contextWindowId = windowId;
+  hideContextMenu();
+
+  const menu = document.getElementById('windowContextMenu');
+  menu.hidden = false;
+
+  const vpW = window.innerWidth;
+  const vpH = window.innerHeight;
+  menu.style.left = '0';
+  menu.style.top = '0';
+
+  const mw = menu.offsetWidth;
+  const mh = menu.offsetHeight;
+  menu.style.left = Math.min(x, vpW - mw - 8) + 'px';
+  menu.style.top = Math.min(y, vpH - mh - 8) + 'px';
+}
+
+/**
+ * Hide all context menus (regular + live window + submenus).
+ */
+function hideAllContextMenus() {
+  hideContextMenu();
+  document.getElementById('windowContextMenu').hidden = true;
+  document.getElementById('liveWindowMenu').hidden = true;
+  document.getElementById('mergeMenu').hidden = true;
 }
 
 // =========================================================
@@ -5649,12 +5914,73 @@ function bindGlobalEvents() {
       hideContextMenu();
       deleteSiteWithConfirm(id, cid);
     }
+
+    // --- Live tab actions ---
+    if (action === 'live-move-to-window') {
+      showLiveWindowMenu(item, 'move');
+    }
+    if (action === 'live-copy-to-window') {
+      showLiveWindowMenu(item, 'copy');
+    }
+    if (action === 'live-move-to-top') {
+      const site = getSiteById(contextCatId, contextSiteId);
+      hideContextMenu();
+      if (site && site.tabId) {
+        // Move to index 0 (after pinned tabs if unpinned)
+        const cat = getCatById(contextCatId);
+        const targetIndex = site.isPinned ? 0 : (cat ? cat.sites.filter(s => s.isPinned).length : 0);
+        chrome.tabs.move(site.tabId, { index: targetIndex }).catch(console.error);
+      }
+    }
+    if (action === 'live-move-to-bottom') {
+      const site = getSiteById(contextCatId, contextSiteId);
+      hideContextMenu();
+      if (site && site.tabId) {
+        chrome.tabs.move(site.tabId, { index: -1 }).catch(console.error);
+      }
+    }
+    if (action === 'live-pin-tab') {
+      const site = getSiteById(contextCatId, contextSiteId);
+      hideContextMenu();
+      if (site && site.tabId) {
+        chrome.tabs.update(site.tabId, { pinned: !site.isPinned }).catch(console.error);
+      }
+    }
+  });
+
+  // --- Window context menu actions ---
+  document.getElementById('windowContextMenu').addEventListener('click', async (e) => {
+    const item = e.target.closest('.context-item');
+    if (!item) return;
+    const action = item.dataset.action;
+    const windowId = contextWindowId;
+
+    if (action === 'win-focus') {
+      hideAllContextMenus();
+      if (windowId) chrome.windows.update(windowId, { focused: true });
+    }
+    if (action === 'win-new') {
+      hideAllContextMenus();
+      chrome.windows.create({ url: 'about:blank' });
+    }
+    if (action === 'win-merge') {
+      showMergeMenu(item);
+    }
+    if (action === 'win-close') {
+      hideAllContextMenus();
+      if (windowId && confirm('Close this window and all its tabs?')) {
+        chrome.windows.remove(windowId).catch(console.error);
+      }
+    }
   });
 
   // Close context menu on outside click
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('#contextMenu') && !e.target.closest('#moveMenu')) {
+    if (!e.target.closest('#contextMenu') && !e.target.closest('#moveMenu') &&
+        !e.target.closest('#windowContextMenu') && !e.target.closest('#liveWindowMenu') &&
+        !e.target.closest('#mergeMenu')) {
       hideContextMenu();
+      hideAllContextMenus();
     }
   });
 

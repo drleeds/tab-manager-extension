@@ -41,7 +41,17 @@ A special ephemeral workspace (`LIVE_TABS_ID = '__live_tabs__'`) that mirrors al
 - **Search is scoped** — when on Live Tabs, search only searches live tabs, not saved categories
 - **Select mode works** — with "Close Selected Tabs" and "Save to Category" actions instead of Move/Delete
 - **Drag from Live Tabs to a regular category** = save that tab (creates a new site with fresh ID)
-- **Context menu** shows "Switch to tab" and "Close tab" instead of Edit/Move/Delete
+- **Drag between live tab windows** = `chrome.tabs.move()` to reorder within or move between windows
+- **`liveTabsDragPaused`** flag suppresses auto-refresh during drag operations to prevent UI rebuild mid-drag; set `true` on `dragstart`, `false` on `dragend` (in `dragdrop.js`)
+- **Drop indicators** are inserted between live tab tiles (same as saved tiles) for visual drag feedback
+- **Context menu** shows: Switch to tab, Close tab, Move to window (submenu), Copy to window (submenu), Move to top/bottom, Pin/Unpin tab, Open in new tab, Copy URL
+- **Window-level context menu** (right-click on window header): Focus window, New window, Merge into window (submenu), Close window
+- **Live tab move/copy submenus** (`#liveWindowMenu`) list all windows with Top/Bottom placement buttons, plus "New window" option
+- **Merge menu** (`#mergeMenu`) moves all tabs from one window into another via `chrome.tabs.move()`
+- **"New Window" card** appears at the end of live tabs grid (dashed-border card with + button), creates `chrome.windows.create({ url: 'about:blank' })`
+- **Pin/Unpin** uses `chrome.tabs.update(tabId, { pinned: !isPinned })`
+- **Move to top** respects pinned tab constraints — unpinned tabs move to the first position after pinned tabs
+- **`hideAllContextMenus()`** hides all 5 context menu/submenu elements (contextMenu, moveMenu, liveWindowMenu, windowContextMenu, mergeMenu)
 - **`getCatById()` and `getSiteById()`** search both `appData.categories` and `liveTabsData.categories`
 
 ### Tab Splitter
@@ -112,7 +122,7 @@ icons/               — Extension icons
 Categories, sites, notes, workspaces, bird's-eye view (all workspaces stacked), category collapse/expand, search with highlighting, drag-and-drop (sites + categories), multi-select mode (move, copy, delete, consolidate, refresh, fetch descriptions), keyboard shortcuts, Quick Add inbox, save all open tabs, open category as pinned tabs, deduplicate URLs, copy URLs, export (JSON + HTML), import (native + TabExtend), undo, light/dark themes.
 
 ### Live Tabs
-Real-time view of all open browser windows/tabs, click-to-switch, close tab buttons, search scoped to live tabs, select mode with bulk close and save-to-category, drag tabs into saved categories, context menu with switch/close actions, auto-refresh on tab events.
+Real-time view of all open browser windows/tabs, click-to-switch, close tab buttons, search scoped to live tabs, select mode with bulk close and save-to-category, drag tabs into saved categories, drag-and-drop reorder within and between windows (via Chrome tabs API), right-click move/copy to window submenus, pin/unpin tabs, move to top/bottom, window-level context menu (focus, new window, merge windows, close window), "New Window" card button, auto-refresh on tab events (paused during drag).
 
 ### Tab Splitter
 Manual and automatic window splitting, configurable max tabs per window (3–50), recursive splitting, header quick-split button, settings panel controls.

@@ -81,6 +81,11 @@ const DragDrop = (() => {
       state.sourceCatId = dragTarget.dataset.categoryId;
     }
 
+    // Pause live tab auto-refresh during drag
+    if (typeof liveTabsDragPaused !== 'undefined') {
+      liveTabsDragPaused = true;
+    }
+
     // Create custom ghost — prefer explicit name/label, fall back to note text snippet
     let label = dragTarget.querySelector('.site-name, .note-tile-label, .category-title')?.textContent?.trim() || '';
     if (!label) {
@@ -119,6 +124,11 @@ const DragDrop = (() => {
           el.classList.remove('visible');
         }
       });
+
+    // Resume live tab auto-refresh after drag ends
+    if (typeof liveTabsDragPaused !== 'undefined') {
+      liveTabsDragPaused = false;
+    }
 
     state.type = state.sourceId = state.sourceCatId = null;
   }
