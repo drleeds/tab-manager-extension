@@ -22,6 +22,11 @@ let skipScrollRestore = false;
 // Counter of pending local saves; the chrome.storage.onChanged listener skips re-rendering while > 0
 let localSavePending = 0;
 
+// Live Tabs workspace
+const LIVE_TABS_ID = '__live_tabs__';
+let liveTabsData = null;       // { categories: [...] } — ephemeral, never saved
+let liveTabsListeners = null;  // array of listener removers
+
 // Select mode state
 let selectMode = false;
 // Set of "catId::siteId" strings for selected sites
@@ -49,6 +54,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   appData = await Storage.loadData();
   applySettings();
+
+  // If resuming on Live Tabs workspace, load the live data first
+  if (appData.settings.currentWorkspace === LIVE_TABS_ID) {
+    await loadLiveTabs();
+    startLiveTabsListeners();
+  }
+
   renderAll();
   bindGlobalEvents();
   DragDrop.init(handleDrop);
@@ -95,6 +107,12 @@ function applySettings() {
   // Bird's-eye toggle state
   const birdsEyeBtn = document.getElementById('birdsEyeToggle');
   if (birdsEyeBtn) birdsEyeBtn.classList.toggle('active', s.birdsEyeView);
+
+  // Tab Splitter settings sync
+  const splitMaxInput = document.getElementById('tabSplitMaxTabs');
+  if (splitMaxInput) splitMaxInput.value = s.tabSplitMaxTabs || 12;
+  const splitAutoToggle = document.getElementById('tabSplitAutoSplit');
+  if (splitAutoToggle) splitAutoToggle.checked = s.tabSplitAutoSplit || false;
 }
 
 // =========================================================
@@ -107,9 +125,10 @@ function renderAll() {
   // Update workspace UI first (even if empty)
   updateWorkspaceUI();
 
-  if (appData.settings.birdsEyeView && !searchQuery) {
+  if (appData.settings.birdsEyeView && !searchQuery && !isLiveTabsActive()) {
     // Bird's-eye: render all workspaces stacked vertically
     document.body.classList.add('birdseye-active');
+    document.body.classList.remove('live-tabs-active');
     container.classList.remove('categories-grid');
     container.classList.add('birdseye-container');
 
@@ -123,9 +142,30 @@ function renderAll() {
 
     document.getElementById('emptyState').hidden = totalCats > 0;
     document.getElementById('searchEmptyState').hidden = true;
+  } else if (isLiveTabsActive()) {
+    // Live Tabs workspace — show open browser windows
+    document.body.classList.remove('birdseye-active');
+    document.body.classList.add('live-tabs-active');
+    container.classList.add('categories-grid');
+    container.classList.remove('birdseye-container');
+
+    const liveCats = liveTabsData?.categories || [];
+    const isEmpty = liveCats.length === 0;
+    document.getElementById('emptyState').hidden = !isEmpty;
+    document.getElementById('searchEmptyState').hidden = true;
+
+    if (isEmpty) return;
+
+    liveCats.forEach(cat => {
+      const card = buildLiveTabCard(cat);
+      container.appendChild(card);
+    });
+
+    applySearch(searchQuery);
   } else {
     // Normal single-workspace view (or search mode)
     document.body.classList.remove('birdseye-active');
+    document.body.classList.remove('live-tabs-active');
     container.classList.add('categories-grid');
     container.classList.remove('birdseye-container');
 
@@ -144,7 +184,7 @@ function renderAll() {
     if (isEmpty) return;
 
     sorted.forEach(cat => {
-      const card = buildCategoryCard(cat);
+      const card = cat.isLive ? buildLiveTabCard(cat) : buildCategoryCard(cat);
       container.appendChild(card);
     });
 
@@ -1223,10 +1263,20 @@ function showContextMenu(x, y, siteId, catId) {
   const menu = document.getElementById('contextMenu');
   menu.hidden = false;
 
-  // Hide "Fetch description" for note-type items
   const site = getSiteById(catId, siteId);
+  const isLive = !!(site && site.tabId);
+
+  // Toggle visibility of live-only vs regular-only items
+  menu.querySelectorAll('[data-action="switch-to-tab"], [data-action="close-tab"]').forEach(el => {
+    el.style.display = isLive ? '' : 'none';
+  });
+  menu.querySelectorAll('[data-action="edit"], [data-action="refresh-favicon"], [data-action="fetch-description"], [data-action="move"], [data-action="copy"], [data-action="move-to-top"], [data-action="move-to-bottom"], [data-action="delete"]').forEach(el => {
+    el.style.display = isLive ? 'none' : '';
+  });
+
+  // Hide "Fetch description" for note-type items
   const fetchDescItem = menu.querySelector('[data-action="fetch-description"]');
-  if (fetchDescItem) {
+  if (fetchDescItem && !isLive) {
     fetchDescItem.style.display = (site && site.type === 'note') ? 'none' : '';
   }
 
@@ -2255,10 +2305,43 @@ function copySiteToCategory(siteId, fromCatId, toCatId, position = 'bottom') {
 // =========================================================
 function handleDrop(type, sourceId, sourceCatId, targetId, targetCatId) {
   if (type === 'site') {
+    // Check if source is from Live Tabs (copy to target, don't remove from live)
+    const sourceLive = (liveTabsData?.categories || []).find(c => c.id === sourceCatId);
+    const targetCat = appData.categories.find(c => c.id === targetCatId);
+
+    if (sourceLive && targetCat) {
+      // Drag from Live Tabs to a regular category = save that tab
+      const liveSite = sourceLive.sites.find(s => s.id === sourceId);
+      if (!liveSite) return;
+
+      Undo.saveSnapshot('Save tab from Live Tabs', appData);
+      const newSite = {
+        id: Utils.generateId(),
+        name: liveSite.name || Utils.nameFromUrl(liveSite.url),
+        url: liveSite.url,
+        favicon: liveSite.favicon || '',
+        order: targetCat.sites.length
+      };
+
+      let targetIndex;
+      if (targetId) {
+        const targetSiteIndex = targetCat.sites.findIndex(s => s.id === targetId);
+        targetIndex = targetSiteIndex;
+      } else {
+        targetIndex = targetCat.sites.length;
+      }
+      targetCat.sites.splice(targetIndex, 0, newSite);
+      reindexSites(targetCat);
+      saveAndRefresh();
+      return;
+    }
+
+    // Don't allow drops INTO live tab categories
+    if (!targetCat) return;
+
     Undo.saveSnapshot('Move item', appData);
     const sourceCat = appData.categories.find(c => c.id === sourceCatId);
-    const targetCat = appData.categories.find(c => c.id === targetCatId);
-    if (!sourceCat || !targetCat) return;
+    if (!sourceCat) return;
 
     const sourceIndex = sourceCat.sites.findIndex(s => s.id === sourceId);
     if (sourceIndex === -1) return;
@@ -2406,16 +2489,31 @@ function exitSelectMode() {
 function updateSelectionToolbar() {
   const toolbar = document.getElementById('selectionToolbar');
   const count = selectedSites.size;
+  const isLive = isLiveTabsActive();
   document.getElementById('selectionCount').textContent =
     count === 0 ? 'None selected'
     : count === 1 ? '1 selected'
     : `${count} selected`;
+
+  // Show/hide buttons based on whether we're in Live Tabs or regular mode
   document.getElementById('deleteSelectedBtn').disabled = count === 0;
+  document.getElementById('deleteSelectedBtn').style.display = isLive ? 'none' : '';
   document.getElementById('moveSelectedBtn').disabled = count === 0;
+  document.getElementById('moveSelectedBtn').style.display = isLive ? 'none' : '';
   document.getElementById('copyUrlsBtn').disabled = count === 0;
   document.getElementById('consolidateSelectedBtn').disabled = count === 0;
+  document.getElementById('consolidateSelectedBtn').style.display = isLive ? 'none' : '';
   document.getElementById('refreshNamesBtn').disabled = count === 0;
+  document.getElementById('refreshNamesBtn').style.display = isLive ? 'none' : '';
   document.getElementById('fetchDescriptionsBtn').disabled = count === 0;
+  document.getElementById('fetchDescriptionsBtn').style.display = isLive ? 'none' : '';
+
+  // Live Tabs specific buttons
+  document.getElementById('closeSelectedTabsBtn').disabled = count === 0;
+  document.getElementById('closeSelectedTabsBtn').style.display = isLive ? '' : 'none';
+  document.getElementById('saveSelectedTabsBtn').disabled = count === 0;
+  document.getElementById('saveSelectedTabsBtn').style.display = isLive ? '' : 'none';
+
   toolbar.classList.toggle('is-visible', selectMode);
 
   // Update per-category header checkboxes
@@ -2443,7 +2541,10 @@ function updateSelectionToolbar() {
 }
 
 function selectAllSites() {
-  appData.categories.forEach(cat => {
+  const categories = isLiveTabsActive()
+    ? (liveTabsData?.categories || [])
+    : appData.categories;
+  categories.forEach(cat => {
     cat.sites.forEach(site => {
       selectedSites.add(`${cat.id}::${site.id}`);
     });
@@ -2727,6 +2828,135 @@ async function deleteSelected() {
 
   exitSelectMode();
   saveAndRefresh();
+}
+
+async function closeSelectedTabs() {
+  const count = selectedSites.size;
+  if (count === 0) return;
+  const msg = count === 1 ? 'Close 1 selected tab?' : `Close ${count} selected tabs?`;
+  const ok = await Utils.confirm(msg, 'Close');
+  if (!ok) return;
+
+  const tabIds = [];
+  selectedSites.forEach(key => {
+    const [catId, siteId] = key.split('::');
+    const site = getSiteById(catId, siteId);
+    if (site && site.tabId) tabIds.push(site.tabId);
+  });
+
+  if (tabIds.length > 0) {
+    try {
+      await chrome.tabs.remove(tabIds);
+    } catch (err) {
+      console.error('Failed to close tabs:', err);
+    }
+  }
+
+  exitSelectMode();
+  // Live tabs listeners will trigger refresh
+}
+
+function showSaveSelectedMenu() {
+  const menu = document.getElementById('moveSelectedMenu');
+
+  if (!menu.hidden) {
+    menu.hidden = true;
+    return;
+  }
+
+  // Build a simple category picker
+  menu.innerHTML = '';
+
+  const entries = getSortedCategoriesWithWorkspace(null);
+  if (entries.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'context-item';
+    empty.style.color = 'var(--text-muted)';
+    empty.textContent = 'No categories — create one first';
+    menu.appendChild(empty);
+  } else {
+    const multipleWorkspaces = appData.workspaces.length > 1;
+    let lastWsName = null;
+
+    entries.forEach(({ cat, label }) => {
+      if (multipleWorkspaces && cat.workspaceName !== lastWsName) {
+        lastWsName = cat.workspaceName;
+        if (menu.children.length > 0) {
+          const div = document.createElement('div');
+          div.className = 'context-divider';
+          menu.appendChild(div);
+        }
+        const wsHeader = document.createElement('div');
+        wsHeader.className = 'context-item';
+        wsHeader.style.cssText = 'font-weight: 600; font-size: 11px; color: var(--text-muted); pointer-events: none;';
+        wsHeader.textContent = cat.workspaceName;
+        menu.appendChild(wsHeader);
+      }
+
+      const item = document.createElement('button');
+      item.className = 'context-item';
+      item.textContent = `${cat.icon} ${cat.name}`;
+      item.addEventListener('click', () => {
+        menu.hidden = true;
+        saveSelectedTabsToCategory(cat.id);
+      });
+      menu.appendChild(item);
+    });
+  }
+
+  // Position relative to the Save button
+  menu.style.visibility = 'hidden';
+  menu.hidden = false;
+
+  const anchor = document.getElementById('saveSelectedTabsBtn');
+  const rect = anchor.getBoundingClientRect();
+  const vpH = window.innerHeight;
+  const vpW = window.innerWidth;
+  const mh = menu.offsetHeight;
+  const mw = menu.offsetWidth;
+
+  const spaceAbove = rect.top - 8;
+  if (spaceAbove >= mh) {
+    menu.style.top = Math.max(8, rect.top - mh - 6) + 'px';
+  } else {
+    menu.style.top = (rect.bottom + 6) + 'px';
+  }
+  const rightEdge = vpW - rect.right;
+  menu.style.right = Math.max(8, rightEdge) + 'px';
+  const leftPos = vpW - Math.max(8, rightEdge) - mw;
+  if (leftPos < 8) menu.style.right = (vpW - mw - 8) + 'px';
+
+  menu.style.visibility = '';
+}
+
+function saveSelectedTabsToCategory(targetCatId) {
+  const targetCat = appData.categories.find(c => c.id === targetCatId);
+  if (!targetCat) return;
+
+  Undo.saveSnapshot('Save tabs to category', appData);
+
+  selectedSites.forEach(key => {
+    const [catId, siteId] = key.split('::');
+    const site = getSiteById(catId, siteId);
+    if (!site || !site.url) return;
+
+    // Skip duplicates
+    if (targetCat.sites.some(s => s.url === site.url)) return;
+
+    targetCat.sites.push({
+      id: Utils.generateId(),
+      name: site.name || Utils.nameFromUrl(site.url),
+      url: site.url,
+      favicon: site.favicon || '',
+      order: targetCat.sites.length
+    });
+  });
+
+  reindexSites(targetCat);
+  exitSelectMode();
+  saveAndRefresh();
+
+  showSplitFeedback(`Saved to ${targetCat.icon} ${targetCat.name}`);
 }
 
 async function consolidateSelectedUrls() {
@@ -3323,6 +3553,405 @@ function addPickerItemsToCategory(catId, position) {
 }
 
 // =========================================================
+// Live Tabs Workspace
+// =========================================================
+
+function isLiveTabsActive() {
+  return appData.settings.currentWorkspace === LIVE_TABS_ID;
+}
+
+async function loadLiveTabs() {
+  if (typeof chrome === 'undefined' || !chrome.tabs) return;
+
+  const windows = await chrome.windows.getAll({ populate: true });
+  const categories = [];
+
+  // Get current extension newtab URL to filter it out
+  const extensionOrigin = chrome.runtime.getURL('');
+
+  windows.forEach((win, i) => {
+    // Filter out devtools and other non-normal windows
+    if (win.type !== 'normal') return;
+
+    const validTabs = win.tabs.filter(t => {
+      // Filter out the Tab Manager Pro newtab page
+      if (t.url && t.url.startsWith(extensionOrigin)) return false;
+      return true;
+    });
+
+    if (validTabs.length === 0) return;
+
+    const sites = validTabs.map((tab, j) => {
+      let domain = '';
+      try { domain = new URL(tab.url).hostname.replace(/^www\./, ''); } catch {}
+
+      return {
+        id: `live-tab-${tab.id}`,
+        name: tab.title || domain || tab.url,
+        url: tab.url || '',
+        favicon: tab.favIconUrl || '',
+        order: j,
+        tabId: tab.id,
+        windowId: win.id,
+        domain: domain,
+        isActive: tab.active,
+        isPinned: tab.pinned
+      };
+    });
+
+    // Generate window name from most prominent domains
+    const windowName = generateWindowName(sites, win.focused);
+
+    categories.push({
+      id: `live-win-${win.id}`,
+      name: windowName,
+      icon: win.focused ? '🟢' : '🪟',
+      order: i,
+      workspaceId: LIVE_TABS_ID,
+      windowId: win.id,
+      isFocused: win.focused,
+      isLive: true,
+      sites: sites
+    });
+  });
+
+  // Put focused window first
+  categories.sort((a, b) => (b.isFocused ? 1 : 0) - (a.isFocused ? 1 : 0));
+  categories.forEach((c, i) => c.order = i);
+
+  liveTabsData = { categories };
+}
+
+function generateWindowName(sites, isFocused) {
+  // Collect unique domains, preserving order
+  const seen = new Set();
+  const domains = [];
+  sites.forEach(s => {
+    if (s.domain && !seen.has(s.domain)) {
+      seen.add(s.domain);
+      domains.push(s.domain);
+    }
+  });
+
+  if (domains.length === 0) return `Window (${sites.length} tabs)`;
+
+  // Show first 2 domains + count
+  const shown = domains.slice(0, 2).join(', ');
+  const remaining = sites.length - 2;
+  if (remaining > 0) {
+    return `${shown} & ${remaining} more`;
+  }
+  return shown;
+}
+
+function buildLiveTabCard(cat) {
+  const card = document.createElement('div');
+  card.className = 'category-card live-tab-card';
+  if (cat.isFocused) card.classList.add('live-focused-window');
+  card.dataset.categoryId = cat.id;
+  card.dataset.windowId = cat.windowId;
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'category-header live-tab-header';
+
+  // Per-card select-all checkbox (shown in select mode)
+  const catCb = document.createElement('input');
+  catCb.type = 'checkbox';
+  catCb.className = 'cat-select-all-cb';
+  catCb.title = 'Select all in this window';
+  catCb.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectAllInCategory(cat.id);
+  });
+
+  const iconEl = document.createElement('span');
+  iconEl.className = 'category-icon';
+  iconEl.textContent = cat.icon;
+
+  const titleEl = document.createElement('span');
+  titleEl.className = 'category-title';
+  titleEl.textContent = cat.name;
+
+  const countEl = document.createElement('span');
+  countEl.className = 'category-count';
+  countEl.textContent = cat.sites.length;
+
+  // Focus button — switch to this window
+  const focusBtn = document.createElement('button');
+  focusBtn.className = 'category-menu-btn';
+  focusBtn.title = 'Focus this window';
+  focusBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+    <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+  </svg>`;
+  focusBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    chrome.windows.update(cat.windowId, { focused: true });
+  });
+
+  header.append(catCb, iconEl, titleEl, countEl, focusBtn);
+
+  // Sites list
+  const sitesList = document.createElement('div');
+  sitesList.className = 'sites-list';
+  sitesList.dataset.categoryId = cat.id;
+
+  const sortedSites = [...cat.sites].sort((a, b) => a.order - b.order);
+  sortedSites.forEach(site => {
+    const tile = buildLiveTabTile(site, cat.id);
+    sitesList.appendChild(tile);
+  });
+
+  card.append(header, sitesList);
+
+  // Make sites draggable to regular categories
+  sortedSites.forEach(site => {
+    const tile = sitesList.querySelector(`[data-site-id="${site.id}"]`);
+    if (tile) DragDrop.makeSiteDraggable(tile, site.id, cat.id);
+  });
+
+  return card;
+}
+
+function buildLiveTabTile(site, categoryId) {
+  const key = `${categoryId}::${site.id}`;
+
+  const tile = document.createElement('div');
+  tile.className = 'site-tile live-tab-tile';
+  if (selectMode && selectedSites.has(key)) tile.classList.add('selected');
+  if (site.isActive) tile.classList.add('live-active-tab');
+  if (site.isPinned) tile.classList.add('live-pinned-tab');
+  tile.dataset.siteId = site.id;
+  tile.dataset.categoryId = categoryId;
+  tile.dataset.tabId = site.tabId;
+  tile.dataset.windowId = site.windowId;
+  tile.dataset.dragType = 'site';
+  tile.setAttribute('tabindex', '0');
+  tile.title = site.url;
+
+  // Click: select mode toggle, or switch to this tab
+  tile.addEventListener('click', (e) => {
+    if (selectMode) {
+      e.preventDefault();
+      if (e.shiftKey) {
+        selectRange(key);
+      } else {
+        toggleSiteSelection(key, tile);
+      }
+      return;
+    }
+    e.preventDefault();
+    chrome.tabs.update(site.tabId, { active: true });
+    chrome.windows.update(site.windowId, { focused: true });
+  });
+
+  // Right-click context menu
+  tile.addEventListener('contextmenu', (e) => {
+    if (selectMode) return;
+    e.preventDefault();
+    showContextMenu(e.clientX, e.clientY, site.id, categoryId);
+  });
+
+  // Checkbox (shown in select mode)
+  const cb = document.createElement('input');
+  cb.type = 'checkbox';
+  cb.className = 'site-select-cb';
+  cb.checked = selectedSites.has(key);
+  cb.setAttribute('aria-hidden', 'true');
+  cb.tabIndex = -1;
+  cb.addEventListener('click', (e) => e.stopPropagation());
+
+  // Favicon
+  const faviconWrap = document.createElement('span');
+  faviconWrap.className = 'site-favicon-wrap';
+  if (site.favicon && site.favicon.startsWith('http')) {
+    const img = document.createElement('img');
+    img.className = 'site-favicon';
+    img.src = site.favicon;
+    img.alt = '';
+    img.loading = 'lazy';
+    img.onerror = () => {
+      img.style.display = 'none';
+      const badge = document.createElement('span');
+      badge.className = 'site-favicon-badge';
+      badge.style.background = Utils.badgeColor(site.name || site.url);
+      badge.textContent = (site.name || '?')[0].toUpperCase();
+      faviconWrap.appendChild(badge);
+    };
+    faviconWrap.appendChild(img);
+  } else {
+    const badge = document.createElement('span');
+    badge.className = 'site-favicon-badge';
+    badge.style.background = Utils.badgeColor(site.name || site.url);
+    badge.textContent = (site.name || '?')[0].toUpperCase();
+    faviconWrap.appendChild(badge);
+  }
+
+  // Name + domain
+  const textWrap = document.createElement('div');
+  textWrap.className = 'live-tab-text';
+
+  const nameEl = document.createElement('span');
+  nameEl.className = 'site-name';
+  nameEl.textContent = site.name || site.url;
+
+  const domainEl = document.createElement('span');
+  domainEl.className = 'live-tab-domain';
+  domainEl.textContent = site.domain;
+
+  textWrap.append(nameEl, domainEl);
+
+  // Pinned indicator
+  if (site.isPinned) {
+    const pinIcon = document.createElement('span');
+    pinIcon.className = 'live-pin-icon';
+    pinIcon.title = 'Pinned tab';
+    pinIcon.textContent = '📌';
+    tile.appendChild(pinIcon);
+  }
+
+  // Close tab button
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'live-tab-close';
+  closeBtn.title = 'Close tab';
+  closeBtn.innerHTML = '&times;';
+  closeBtn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    try {
+      await chrome.tabs.remove(site.tabId);
+      // Will be refreshed by the tab listener
+    } catch (err) {
+      console.error('Failed to close tab:', err);
+    }
+  });
+
+  tile.append(cb, faviconWrap, textWrap, closeBtn);
+  return tile;
+}
+
+function startLiveTabsListeners() {
+  if (liveTabsListeners) return; // already listening
+  liveTabsListeners = [];
+
+  let refreshTimer = null;
+  const debouncedRefresh = () => {
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(async () => {
+      if (!isLiveTabsActive()) return;
+      await loadLiveTabs();
+      renderAll();
+      DragDrop.init(handleDrop);
+    }, 500);
+  };
+
+  const events = [
+    chrome.tabs.onCreated,
+    chrome.tabs.onRemoved,
+    chrome.tabs.onUpdated,
+    chrome.tabs.onMoved,
+    chrome.tabs.onAttached,
+    chrome.tabs.onDetached
+  ];
+
+  events.forEach(event => {
+    event.addListener(debouncedRefresh);
+    liveTabsListeners.push(() => event.removeListener(debouncedRefresh));
+  });
+}
+
+function stopLiveTabsListeners() {
+  if (!liveTabsListeners) return;
+  liveTabsListeners.forEach(remove => remove());
+  liveTabsListeners = null;
+  liveTabsData = null;
+}
+
+// =========================================================
+// Tab Splitter
+// =========================================================
+async function splitWindowById(windowId, maxTabs) {
+  const tabs = await chrome.tabs.query({ windowId });
+  if (tabs.length <= maxTabs) {
+    return { success: true, split: false };
+  }
+
+  const tabsToMove = tabs.slice(maxTabs);
+  const newWindow = await chrome.windows.create({
+    tabId: tabsToMove[0].id,
+    focused: false
+  });
+
+  const remainingIds = tabsToMove.slice(1).map(t => t.id);
+  if (remainingIds.length > 0) {
+    await chrome.tabs.move(remainingIds, { windowId: newWindow.id, index: -1 });
+  }
+
+  // Recursive split if new window still exceeds limit
+  if (tabsToMove.length > maxTabs) {
+    await splitWindowById(newWindow.id, maxTabs);
+  }
+
+  return { success: true, split: true, originalTabCount: tabs.length };
+}
+
+async function splitCurrentWindow(triggerId) {
+  const isHeader = (triggerId === 'splitWindowBtn');
+  const btn = document.getElementById(triggerId);
+  btn.disabled = true;
+  if (!isHeader) btn.textContent = 'Splitting...';
+
+  try {
+    const [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const maxTabs = appData.settings.tabSplitMaxTabs || 12;
+    const result = await splitWindowById(currentTab.windowId, maxTabs);
+
+    if (result.split) {
+      const msg = `Split ${result.originalTabCount} tabs`;
+      if (isHeader) {
+        showSplitFeedback(msg);
+      } else {
+        btn.textContent = msg;
+      }
+    } else {
+      const msg = 'No split needed';
+      if (isHeader) {
+        showSplitFeedback(msg);
+      } else {
+        btn.textContent = msg;
+      }
+    }
+  } catch (err) {
+    const msg = 'Split failed';
+    if (isHeader) {
+      showSplitFeedback(msg);
+    } else {
+      btn.textContent = msg;
+    }
+    console.error('Tab split error:', err);
+  }
+
+  setTimeout(() => {
+    btn.disabled = false;
+    if (!isHeader) btn.textContent = 'Split Now';
+  }, 2000);
+}
+
+function showSplitFeedback(message) {
+  const el = document.getElementById('saveIndicator');
+  if (!el) return;
+  el.textContent = message;
+  el.hidden = false;
+  el.classList.add('show');
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => { el.textContent = 'Saved'; el.hidden = true; }, 250);
+  }, 1500);
+}
+
+// =========================================================
 // Settings
 // =========================================================
 function openSettingsModal() {
@@ -3672,7 +4301,9 @@ function saveAndRefresh() {
 // Helpers: find by id
 // =========================================================
 function getCatById(id) {
-  return appData.categories.find(c => c.id === id) || null;
+  return appData.categories.find(c => c.id === id)
+    || (liveTabsData?.categories || []).find(c => c.id === id)
+    || null;
 }
 
 function getSiteById(catId, siteId) {
@@ -3855,8 +4486,14 @@ let switchingWorkspace = false;
 
 function switchWorkspace(workspaceId) {
   if (switchingWorkspace) return; // Prevent double-switching
-  if (!getWorkspaceById(workspaceId)) return;
+  // Allow Live Tabs or a real workspace
+  if (workspaceId !== LIVE_TABS_ID && !getWorkspaceById(workspaceId)) return;
   if (appData.settings.currentWorkspace === workspaceId) return; // Already on this workspace
+
+  // Stop live tabs listeners when leaving Live Tabs
+  if (isLiveTabsActive() && workspaceId !== LIVE_TABS_ID) {
+    stopLiveTabsListeners();
+  }
 
   switchingWorkspace = true;
   appData.settings.currentWorkspace = workspaceId;
@@ -3873,12 +4510,25 @@ function switchWorkspace(workspaceId) {
   }
   searchQuery = '';
 
-  saveAndRefresh();
-
-  // Reset flag after a short delay
-  setTimeout(() => {
-    switchingWorkspace = false;
-  }, 300);
+  if (workspaceId === LIVE_TABS_ID) {
+    // Load live tabs then render (don't save to storage via saveAndRefresh)
+    loadLiveTabs().then(() => {
+      startLiveTabsListeners();
+      renderAll();
+      DragDrop.init(handleDrop);
+      updateWorkspaceUI();
+      // Save workspace selection
+      localSavePending++;
+      Storage.saveData(appData, Utils.flashSaveIndicator);
+      switchingWorkspace = false;
+    });
+  } else {
+    saveAndRefresh();
+    // Reset flag after a short delay
+    setTimeout(() => {
+      switchingWorkspace = false;
+    }, 300);
+  }
 }
 
 function createWorkspace(name) {
@@ -4060,11 +4710,12 @@ function updateWorkspaceUI() {
   if (!selector) return;
 
   // Update trigger button with current workspace name
-  const currentWorkspace = getWorkspaceById(appData.settings.currentWorkspace);
+  const isLive = isLiveTabsActive();
+  const currentWorkspace = isLive ? null : getWorkspaceById(appData.settings.currentWorkspace);
+  const displayName = isLive ? 'Live Tabs' : (currentWorkspace?.name || 'Unknown');
   const trigger = selector.querySelector('.workspace-selector-trigger');
   if (trigger) {
-    // Clear and rebuild content to avoid losing the SVG
-    trigger.innerHTML = `${currentWorkspace?.name || 'Unknown'}
+    trigger.innerHTML = `${Utils.escapeHtml(displayName)}
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
         <polyline points="6 9 12 15 18 9"/>
       </svg>`;
@@ -4249,6 +4900,34 @@ function renderWorkspaceDropdown() {
   });
 
   dropdown.appendChild(newBtn);
+
+  // Add Live Tabs workspace entry (always last)
+  if (typeof chrome !== 'undefined' && chrome.tabs) {
+    const divider = document.createElement('div');
+    divider.className = 'workspace-dropdown-divider';
+    dropdown.appendChild(divider);
+
+    const liveItem = document.createElement('div');
+    liveItem.className = 'workspace-item workspace-item-live';
+    if (isLiveTabsActive()) liveItem.classList.add('active');
+
+    const liveIcon = document.createElement('span');
+    liveIcon.className = 'workspace-live-icon';
+    liveIcon.textContent = '📡';
+
+    const liveName = document.createElement('span');
+    liveName.className = 'workspace-name';
+    liveName.textContent = 'Live Tabs';
+
+    liveItem.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown.hidden = true;
+      switchWorkspace(LIVE_TABS_ID);
+    });
+
+    liveItem.append(liveIcon, liveName);
+    dropdown.appendChild(liveItem);
+  }
 }
 
 function showWorkspaceMenu(button, catId) {
@@ -4740,6 +5419,30 @@ function bindGlobalEvents() {
     Storage.saveData(appData, Utils.flashSaveIndicator);
   });
 
+  // Settings: Tab Splitter — max tabs
+  document.getElementById('tabSplitMaxTabs').addEventListener('change', (e) => {
+    let val = parseInt(e.target.value);
+    if (isNaN(val) || val < 3) val = 3;
+    if (val > 50) val = 50;
+    e.target.value = val;
+    appData.settings.tabSplitMaxTabs = val;
+    localSavePending++;
+    Storage.saveData(appData, Utils.flashSaveIndicator);
+  });
+
+  // Settings: Tab Splitter — auto-split toggle
+  document.getElementById('tabSplitAutoSplit').addEventListener('change', (e) => {
+    appData.settings.tabSplitAutoSplit = e.target.checked;
+    localSavePending++;
+    Storage.saveData(appData, Utils.flashSaveIndicator);
+  });
+
+  // Settings: Tab Splitter — split now button
+  document.getElementById('tabSplitNowBtn').addEventListener('click', () => splitCurrentWindow('tabSplitNowBtn'));
+
+  // Header: Split window button
+  document.getElementById('splitWindowBtn').addEventListener('click', () => splitCurrentWindow('splitWindowBtn'));
+
   // Settings: export JSON
   document.getElementById('exportBtn').addEventListener('click', () => {
     Storage.exportData(appData);
@@ -4824,6 +5527,21 @@ function bindGlobalEvents() {
     if (!item) return;
     const action = item.dataset.action;
 
+    if (action === 'switch-to-tab') {
+      const site = getSiteById(contextCatId, contextSiteId);
+      hideContextMenu();
+      if (site && site.tabId) {
+        chrome.tabs.update(site.tabId, { active: true });
+        chrome.windows.update(site.windowId, { focused: true });
+      }
+    }
+    if (action === 'close-tab') {
+      const site = getSiteById(contextCatId, contextSiteId);
+      hideContextMenu();
+      if (site && site.tabId) {
+        chrome.tabs.remove(site.tabId).catch(console.error);
+      }
+    }
     if (action === 'open-new-tab') {
       const site = getSiteById(contextCatId, contextSiteId);
       if (site) window.open(site.url, '_blank', 'noopener');
@@ -5096,12 +5814,25 @@ function bindGlobalEvents() {
     fetchSelectedDescriptions();
   });
 
+  // Live Tabs: Close Selected Tabs button
+  document.getElementById('closeSelectedTabsBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    closeSelectedTabs();
+  });
+
+  // Live Tabs: Save Selected to Category button
+  document.getElementById('saveSelectedTabsBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    showSaveSelectedMenu();
+  });
+
   // Close move menu on outside click
   document.addEventListener('click', (e) => {
     const menu = document.getElementById('moveSelectedMenu');
     if (!menu.hidden &&
         !e.target.closest('#moveSelectedMenu') &&
-        !e.target.closest('#moveSelectedBtn')) {
+        !e.target.closest('#moveSelectedBtn') &&
+        !e.target.closest('#saveSelectedTabsBtn')) {
       menu.hidden = true;
     }
   });

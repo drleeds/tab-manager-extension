@@ -109,7 +109,9 @@ const Storage = (() => {
       currentWorkspace: 'ws-main',
       quickAddInbox: '',
       birdsEyeView: false,
-      collapsedWorkspaces: []
+      collapsedWorkspaces: [],
+      tabSplitMaxTabs: 12,
+      tabSplitAutoSplit: false
     }
   };
 
@@ -340,7 +342,9 @@ const Storage = (() => {
       currentWorkspace: String(s.currentWorkspace || data.workspaces[0]?.id || 'ws-main'),
       quickAddInbox: typeof s.quickAddInbox === 'string' ? s.quickAddInbox : defaults.quickAddInbox,
       birdsEyeView: typeof s.birdsEyeView === 'boolean' ? s.birdsEyeView : defaults.birdsEyeView,
-      collapsedWorkspaces: Array.isArray(s.collapsedWorkspaces) ? s.collapsedWorkspaces.map(String) : []
+      collapsedWorkspaces: Array.isArray(s.collapsedWorkspaces) ? s.collapsedWorkspaces.map(String) : [],
+      tabSplitMaxTabs: (typeof s.tabSplitMaxTabs === 'number' && s.tabSplitMaxTabs >= 3 && s.tabSplitMaxTabs <= 50) ? s.tabSplitMaxTabs : defaults.tabSplitMaxTabs,
+      tabSplitAutoSplit: typeof s.tabSplitAutoSplit === 'boolean' ? s.tabSplitAutoSplit : defaults.tabSplitAutoSplit
     };
 
     return data;

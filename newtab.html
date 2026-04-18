@@ -87,6 +87,12 @@
             <line x1="9" y1="9" x2="15" y2="15" style="stroke:#fff;stroke-width:2.5"/>
           </svg>
         </button>
+        <button id="splitWindowBtn" class="icon-btn" title="Split current window (move excess tabs to new windows)" aria-label="Split current window">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="18" rx="2"/>
+            <line x1="12" y1="3" x2="12" y2="21"/>
+          </svg>
+        </button>
         <button id="settingsBtn" class="icon-btn" title="Settings" aria-label="Settings">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="3"/>
@@ -170,6 +176,22 @@
         </svg>
         Delete Selected
       </button>
+      <button id="closeSelectedTabsBtn" class="btn btn-danger live-tabs-only" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+        Close Selected Tabs
+      </button>
+      <div style="position:relative;">
+        <button id="saveSelectedTabsBtn" class="btn btn-secondary live-tabs-only" disabled>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Save to Category&hellip;
+        </button>
+      </div>
     </div>
   </div>
 
@@ -201,6 +223,18 @@
 
   <!-- Context Menu -->
   <div id="contextMenu" class="context-menu" hidden>
+    <button class="context-item" data-action="switch-to-tab" style="display:none">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+      Switch to tab
+    </button>
+    <button class="context-item" data-action="close-tab" style="display:none">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+      Close tab
+    </button>
     <button class="context-item" data-action="open-new-tab">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -455,6 +489,34 @@
               <small>Click the extension icon on any page to save it here</small>
             </div>
             <select id="quickAddInbox" class="form-select" style="max-width: 200px;"></select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="settings-heading">Tab Splitter</h3>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Max tabs per window</span>
+              <small>Split windows that exceed this limit (3&ndash;50)</small>
+            </div>
+            <input type="number" id="tabSplitMaxTabs" class="form-input" style="max-width: 80px;" min="3" max="50" value="12">
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Auto-split on new tabs</span>
+              <small>Automatically split when opening tabs exceeds the limit</small>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="tabSplitAutoSplit">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="settings-row settings-row--buttons">
+            <div class="settings-label">
+              <span>Split current window</span>
+              <small>Manually split the focused browser window now</small>
+            </div>
+            <button id="tabSplitNowBtn" class="btn btn-secondary">Split Now</button>
           </div>
         </div>
 

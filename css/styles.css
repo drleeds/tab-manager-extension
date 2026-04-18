@@ -2561,3 +2561,151 @@ a.icon-btn {
 .workspace-section.collapsed .categories-grid {
   display: none;
 }
+
+/* =========================================================
+   Live Tabs Workspace
+   ========================================================= */
+
+/* Hide header controls that don't apply in Live Tabs */
+.live-tabs-active #addCategoryBtn,
+.live-tabs-active #addFromBrowserBtn,
+.live-tabs-active #saveAllTabsBtn,
+.live-tabs-active #birdsEyeToggle {
+  display: none;
+}
+
+/* Live tab card styling */
+.live-tab-card {
+  border-left: 3px solid var(--border);
+}
+
+.live-tab-card.live-focused-window {
+  border-left-color: var(--accent);
+}
+
+.live-tab-header {
+  cursor: default;
+}
+
+/* Live tab tile — show title + domain stacked */
+.live-tab-tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+}
+
+.live-tab-tile:hover {
+  background: var(--bg-hover);
+}
+
+.live-tab-tile.live-active-tab {
+  background: var(--accent-bg);
+  border-left: 2px solid var(--accent);
+  padding-left: 6px;
+}
+
+.live-tab-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.live-tab-text .site-name {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+
+.live-tab-domain {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.live-tab-close {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.live-tab-tile:hover .live-tab-close {
+  display: block;
+}
+
+.live-tab-close:hover {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.live-pin-icon {
+  font-size: 10px;
+  flex-shrink: 0;
+  margin-right: 2px;
+}
+
+/* Favicon in live tab tiles */
+.live-tab-tile .site-favicon-wrap {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.live-tab-tile .site-favicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  object-fit: contain;
+}
+
+.live-tab-tile .site-favicon-badge {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Workspace dropdown: Live Tabs divider & item */
+.workspace-dropdown-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 8px;
+}
+
+.workspace-item-live {
+  cursor: pointer;
+  gap: 8px;
+}
+
+.workspace-item-live:hover {
+  background: var(--bg-hover);
+}
+
+.workspace-live-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}

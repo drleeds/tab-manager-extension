@@ -134,6 +134,63 @@ async function showToast(tabId, message) {
 }
 
 // -------------------------------------------------------
+// Tab Splitter: split overcrowded windows
+// -------------------------------------------------------
+async function getTabSplitSettings() {
+  try {
+    const result = await chrome.storage.local.get(STORAGE_KEY);
+    const data = result[STORAGE_KEY];
+    return {
+      maxTabs: data?.settings?.tabSplitMaxTabs || 12,
+      autoSplit: data?.settings?.tabSplitAutoSplit || false
+    };
+  } catch {
+    return { maxTabs: 12, autoSplit: false };
+  }
+}
+
+async function splitWindow(windowId, maxTabs) {
+  try {
+    const tabs = await chrome.tabs.query({ windowId });
+    if (tabs.length <= maxTabs) {
+      return { success: true, message: 'Window does not need splitting' };
+    }
+
+    const tabsToMove = tabs.slice(maxTabs);
+
+    const newWindow = await chrome.windows.create({
+      tabId: tabsToMove[0].id,
+      focused: false
+    });
+
+    const remainingIds = tabsToMove.slice(1).map(t => t.id);
+    if (remainingIds.length > 0) {
+      await chrome.tabs.move(remainingIds, { windowId: newWindow.id, index: -1 });
+    }
+
+    // Recursive split if new window still exceeds limit
+    if (tabsToMove.length > maxTabs) {
+      await splitWindow(newWindow.id, maxTabs);
+    }
+
+    return { success: true, originalTabCount: tabs.length };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+// Auto-split: monitor tab creation
+chrome.tabs.onCreated.addListener(async (tab) => {
+  const settings = await getTabSplitSettings();
+  if (!settings.autoSplit) return;
+
+  const tabs = await chrome.tabs.query({ windowId: tab.windowId });
+  if (tabs.length > settings.maxTabs) {
+    await splitWindow(tab.windowId, settings.maxTabs);
+  }
+});
+
+// -------------------------------------------------------
 // Main handler: icon click
 // -------------------------------------------------------
 chrome.action.onClicked.addListener(async (tab) => {
