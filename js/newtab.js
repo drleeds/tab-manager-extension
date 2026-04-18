@@ -4521,6 +4521,9 @@ function switchWorkspace(workspaceId) {
       localSavePending++;
       Storage.saveData(appData, Utils.flashSaveIndicator);
       switchingWorkspace = false;
+    }).catch((err) => {
+      console.error('Failed to load live tabs:', err);
+      switchingWorkspace = false;
     });
   } else {
     saveAndRefresh();
@@ -4753,20 +4756,21 @@ function renderWorkspaceDropdown() {
     nameEl.contentEditable = false;
 
     // Click to switch workspace (or scroll to it in bird's-eye mode)
-    nameEl.addEventListener('click', (e) => {
+    item.addEventListener('click', (e) => {
+      // Don't switch if user is editing the name
+      if (nameEl.contentEditable === 'true') return;
       e.stopPropagation();
-      if (!nameEl.contentEditable || nameEl.contentEditable === 'false') {
-        if (appData.settings.birdsEyeView) {
-          const section = document.querySelector(`.workspace-section[data-workspace-id="${ws.id}"]`);
-          if (section) {
-            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            setActiveWorkspace(ws.id);
-          }
-        } else {
-          switchWorkspace(ws.id);
+      if (appData.settings.birdsEyeView && !isLiveTabsActive()) {
+        // Bird's-eye mode: scroll to the workspace section instead of switching
+        const section = document.querySelector(`.workspace-section[data-workspace-id="${ws.id}"]`);
+        if (section) {
+          section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setActiveWorkspace(ws.id);
         }
-        dropdown.hidden = true;
+      } else {
+        switchWorkspace(ws.id);
       }
+      dropdown.hidden = true;
     });
 
     // Double-click to rename

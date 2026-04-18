@@ -87,6 +87,8 @@ The full DOM rebuild on every data change causes a brief favicon re-decode flick
 - **`.categories-grid`** has `scroll-behavior: smooth` in CSS — always use `behavior: 'instant'` when restoring scroll positions programmatically
 - **Live Tabs data is ephemeral** — never save `liveTabsData` to storage, never include live categories in `appData.categories`
 - **`isLiveTabsActive()`** — check this before operations that only apply to saved workspaces (add category, bird's-eye view, etc.)
+- **Live Tabs bypasses bird's-eye mode** — workspace dropdown click handlers must check `!isLiveTabsActive()` before entering the bird's-eye scroll-to-section path, otherwise `setActiveWorkspace()` is called instead of `switchWorkspace()` and the view stays stuck on Live Tabs
+- **Async workspace switches need error handling** — the `loadLiveTabs().then(...)` chain in `switchWorkspace()` must have a `.catch()` that resets `switchingWorkspace = false`, or a rejected promise will permanently lock out all workspace switching
 
 ## File Structure
 ```
