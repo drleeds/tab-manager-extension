@@ -1713,7 +1713,16 @@ async function saveSite() {
   const noteError    = document.getElementById('noteTextError');
 
   const targetCatId = catSelect.value;
-  const isNoteMode  = !noteFields.hidden;
+
+  // Never infer a stored item's type from DOM visibility. When editing, the
+  // item's existing type is authoritative, so no styling bug can silently
+  // convert a saved URL into a note and drop its name. Type is immutable once
+  // an item exists; the URL/Note toggle only applies when adding a new one.
+  let isNoteMode = !noteFields.hidden;
+  if (editingSiteId) {
+    const existing = getCatById(editingCatId)?.sites.find(s => s.id === editingSiteId);
+    if (existing) isNoteMode = existing.type === 'note';
+  }
 
   // ---- Save note ----
   if (isNoteMode) {

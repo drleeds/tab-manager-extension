@@ -1324,6 +1324,14 @@ a.icon-btn {
   margin-bottom: 16px;
 }
 
+/* display:flex above beats the UA stylesheet's [hidden] { display: none }, so
+   openSiteModal()'s `typeToggle.hidden = true` would not actually hide the
+   URL/Note toggle while editing an existing item. Clicking Note there used to
+   convert a saved site into a note. */
+.site-type-toggle[hidden] {
+  display: none;
+}
+
 .site-type-btn {
   display: inline-flex;
   align-items: center;
