@@ -111,7 +111,8 @@ const Storage = (() => {
       birdsEyeView: false,
       collapsedWorkspaces: [],
       tabSplitMaxTabs: 12,
-      tabSplitAutoSplit: false
+      tabSplitAutoSplit: false,
+      testMode: false
     }
   };
 
@@ -344,7 +345,8 @@ const Storage = (() => {
       birdsEyeView: typeof s.birdsEyeView === 'boolean' ? s.birdsEyeView : defaults.birdsEyeView,
       collapsedWorkspaces: Array.isArray(s.collapsedWorkspaces) ? s.collapsedWorkspaces.map(String) : [],
       tabSplitMaxTabs: (typeof s.tabSplitMaxTabs === 'number' && s.tabSplitMaxTabs >= 3 && s.tabSplitMaxTabs <= 50) ? s.tabSplitMaxTabs : defaults.tabSplitMaxTabs,
-      tabSplitAutoSplit: typeof s.tabSplitAutoSplit === 'boolean' ? s.tabSplitAutoSplit : defaults.tabSplitAutoSplit
+      tabSplitAutoSplit: typeof s.tabSplitAutoSplit === 'boolean' ? s.tabSplitAutoSplit : defaults.tabSplitAutoSplit,
+      testMode: typeof s.testMode === 'boolean' ? s.testMode : defaults.testMode
     };
 
     return data;

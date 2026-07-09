@@ -34,6 +34,12 @@
           <!-- Dynamically populated -->
         </div>
       </div>
+      <!-- Live Tabs only: split crowded windows so each column fits without scrolling -->
+      <button id="splitToFitBtn" class="btn btn-secondary" title="Split crowded windows so each fits on screen without scrolling" aria-label="Split windows to fit">Split</button>
+      <!-- Live Tabs + Test Mode only: merge every open window into one, to exercise the splitter -->
+      <button id="consolidateBtn" class="btn btn-secondary" title="Combine all open windows into one (test mode)" aria-label="Combine all windows into one">Combine</button>
+      <!-- Live Tabs only: save all open windows/tabs to a self-contained HTML snapshot -->
+      <button id="snapshotBtn" class="btn btn-secondary" title="Save all open windows and tabs to an HTML snapshot file (restorable later)" aria-label="Snapshot open tabs to HTML">Snapshot</button>
       <button id="birdsEyeToggle" class="icon-btn" title="Toggle all-workspaces view" aria-label="Toggle all-workspaces view">
         <svg class="icon-birdseye" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="18" height="5" rx="1"/>
@@ -609,8 +615,8 @@
           </div>
           <div class="settings-row settings-row--buttons">
             <div class="settings-label">
-              <span>Export HTML</span>
-              <small>Responsive page with search &amp; category toggles</small>
+              <span>Export Saved Sites (HTML)</span>
+              <small>Responsive page of your saved categories, with search &amp; toggles</small>
             </div>
             <button id="exportHtmlBtn" class="btn btn-secondary">Export HTML</button>
           </div>
@@ -631,10 +637,32 @@
           </div>
           <div class="settings-row settings-row--buttons">
             <div class="settings-label">
+              <span>Restore Session Snapshot</span>
+              <small>Reopen windows &amp; tabs from an exported HTML snapshot (adds to what's open)</small>
+            </div>
+            <button id="restoreSnapshotBtn" class="btn btn-secondary">Restore&hellip;</button>
+            <input type="file" id="restoreSnapshotFile" accept=".html,.htm" hidden>
+          </div>
+          <div class="settings-row settings-row--buttons">
+            <div class="settings-label">
               <span>Reset</span>
               <small>Clear all data and start over</small>
             </div>
             <button id="resetBtn" class="btn btn-danger">Reset</button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="settings-heading">Test Mode</h3>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span>Enable test mode</span>
+              <small>Adds a "Combine" button next to Split in Live Tabs that merges all open windows into one, for exercising the splitter</small>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="testModeToggle">
+              <span class="toggle-slider"></span>
+            </label>
           </div>
         </div>
 
@@ -736,11 +764,56 @@
     </div>
   </div>
 
+  <!-- Close All Tabs: offer a snapshot before closing (three-way) -->
+  <div id="closeAllSnapshotModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="closeAllSnapshotTitle">
+    <div class="modal modal--sm">
+      <div class="modal-header">
+        <h2 id="closeAllSnapshotTitle" class="modal-title">Close all tabs</h2>
+      </div>
+      <div class="modal-body">
+        <p id="closeAllSnapshotMsg">This will close all tabs in every window, leaving just this one. Save a snapshot first so you can restore this session later?</p>
+      </div>
+      <div class="modal-footer modal-footer--wrap">
+        <button id="closeAllCancelBtn" class="btn btn-secondary">Cancel</button>
+        <button id="closeAllNoSnapBtn" class="btn btn-danger">Close without snapshot</button>
+        <button id="closeAllSnapBtn" class="btn btn-primary">Snapshot &amp; close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restore Session Snapshot: selective restore from an exported HTML file -->
+  <div id="restoreModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="restoreModalTitle">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="restoreModalTitle" class="modal-title">Restore Session Snapshot</h2>
+        <button class="modal-close" data-modal="restoreModal" aria-label="Close">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p id="restoreMeta" class="restore-meta"></p>
+        <div class="restore-actions-bar">
+          <button id="restoreSelectAll" class="picker-link-btn">Select all</button>
+          <button id="restoreClearAll" class="picker-link-btn">Clear</button>
+          <label class="restore-dedupe"><input type="checkbox" id="restoreDedupe"> Skip tabs already open</label>
+        </div>
+        <div id="restoreTree" class="restore-tree"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="restoreCancelBtn" class="btn btn-secondary">Cancel</button>
+        <button id="restoreConfirmBtn" class="btn btn-primary" disabled>Restore</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Undo toast notification -->
   <div id="undoToast" class="undo-toast"></div>
 
   <script src="js/utils.js"></script>
   <script src="js/storage.js"></script>
+  <script src="js/snapshot.js"></script>
   <script src="js/dragdrop.js"></script>
   <script src="js/undo.js"></script>
   <script src="js/newtab.js"></script>

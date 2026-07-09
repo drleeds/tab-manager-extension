@@ -76,6 +76,20 @@ All data is stored **locally** in your browser via `chrome.storage.sync`. Nothin
 - Filter, search, and select which items to import
 - Already-saved sites are marked to avoid duplicates
 
+### Live Tabs
+- A special workspace that mirrors your open browser windows and tabs in real time (each window is a column, each tab a tile)
+- Click a tile to jump to that tab; hover to close it
+- Drag tabs to reorder within a window, move between windows, or drop onto a saved category to bookmark them
+- Right-click tiles or window headers for move/copy/pin/merge/close actions
+- Select mode: bulk-close tabs or save them to a category; "New Window" card opens a fresh window
+- **Split** (Live Tabs only): splits overcrowded windows into balanced new windows sized to fit your screen without scrolling, keeping the dashboard in front
+- **Combine** (Test Mode only): merges every open window into one, for exercising the splitter
+
+### Tab Splitter
+- Splits overcrowded browser windows into multiple smaller windows
+- Configurable max tabs per window (3–50, default 12), with optional auto-split when opening a tab exceeds the limit
+- Manual "Split Now" in Settings, plus a header quick-split button
+
 ### Undo
 - Press `Cmd/Ctrl + Z` to undo destructive operations (delete, move, reorder)
 - Snapshot-based: restores the full state before the operation
@@ -104,6 +118,8 @@ On Windows, use `Alt` instead of `Option` and `Ctrl` instead of `Cmd`.
 - **Export HTML**: Download a readable HTML page of all saved sites
 - **Import**: Restore from a previously exported JSON file
 - **Reset**: Clear all data and start fresh
+- **Tab Splitter**: Max tabs per window, auto-split toggle, and manual Split Now
+- **Test Mode**: Adds a Combine button in Live Tabs for exercising the splitter
 
 ### Data Safety
 - All data is stored using `chrome.storage.sync`
@@ -129,7 +145,7 @@ tab-manager-extension/
 │   ├── utils.js         Shared helpers (IDs, favicons, debounce, etc.)
 │   ├── dragdrop.js      HTML5 drag-and-drop logic
 │   ├── undo.js          Snapshot-based undo system
-│   └── background.js    Service worker for Quick Add
+│   └── background.js    Service worker for Quick Add + auto-split monitoring
 ├── css/
 │   ├── styles.css       All component styles
 │   └── themes.css       Light and dark theme CSS variables

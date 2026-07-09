@@ -92,8 +92,18 @@ function applySettings() {
   // Force Kanban mode (column mode is deprecated)
   s.layoutMode = 'kanban';
 
-  // Theme class on body
+  // Theme class on body. Preserve the view-state classes that other code owns
+  // (renderAll, select mode, search) so a settings sync mid-view doesn't drop
+  // them — e.g. opening Settings while on Live Tabs must keep live-tabs-active,
+  // since closeModal doesn't re-render.
+  const preservedClasses = ['live-tabs-active', 'birdseye-active', 'search-active', 'select-mode']
+    .filter(c => document.body.classList.contains(c));
   document.body.className = `theme-${s.theme} layout-kanban`;
+  preservedClasses.forEach(c => document.body.classList.add(c));
+
+  // Test mode (persistent) — re-applied here because className was just reset.
+  // Gates the Live Tabs "Combine" button via CSS.
+  document.body.classList.toggle('test-mode-active', !!s.testMode);
 
   // Layout mode class on grid
   const grid = document.getElementById('categoriesGrid');
@@ -115,6 +125,10 @@ function applySettings() {
   if (splitMaxInput) splitMaxInput.value = s.tabSplitMaxTabs || 12;
   const splitAutoToggle = document.getElementById('tabSplitAutoSplit');
   if (splitAutoToggle) splitAutoToggle.checked = s.tabSplitAutoSplit || false;
+
+  // Test mode toggle sync
+  const testModeToggle = document.getElementById('testModeToggle');
+  if (testModeToggle) testModeToggle.checked = !!s.testMode;
 }
 
 // =========================================================
@@ -378,18 +392,18 @@ async function saveAllOpenTabs() {
 // =========================================================
 // Close All Tabs in All Windows
 // =========================================================
-async function closeAllTabs() {
+// Show the "snapshot before closing?" prompt. The three choices (Cancel /
+// Close without snapshot / Snapshot & close) are wired once in setupEventListeners.
+function promptCloseAllTabs() {
   if (typeof chrome === 'undefined' || !chrome.tabs || !chrome.windows) {
-    alert('This feature requires the Chrome extension context.');
+    window.alert('This feature requires the Chrome extension context.');
     return;
   }
+  document.getElementById('closeAllSnapshotModal').classList.add('is-open');
+}
 
-  const confirmed = await Utils.confirm(
-    'Close all tabs in all windows? You may want to save your tabs first. This cannot be undone.',
-    'Close All'
-  );
-  if (!confirmed) return;
-
+// Close every tab and window except the dashboard's own.
+async function performCloseAllTabs() {
   const currentTab = (await chrome.tabs.getCurrent());
   const currentWindowId = currentTab?.windowId;
 
@@ -3646,7 +3660,7 @@ async function loadLiveTabs() {
         id: `live-tab-${tab.id}`,
         name: tab.title || domain || tab.url,
         url: tab.url || '',
-        favicon: tab.favIconUrl || '',
+        favicon: tab.favIconUrl || (tab.url ? Utils.faviconUrl(tab.url) : ''),
         order: j,
         tabId: tab.id,
         windowId: win.id,
@@ -3840,7 +3854,7 @@ function buildLiveTabTile(site, categoryId) {
   // Favicon
   const faviconWrap = document.createElement('span');
   faviconWrap.className = 'site-favicon-wrap';
-  if (site.favicon && site.favicon.startsWith('http')) {
+  if (site.favicon) {
     const img = document.createElement('img');
     img.className = 'site-favicon';
     img.src = site.favicon;
@@ -4214,6 +4228,397 @@ function showSplitFeedback(message) {
     el.classList.remove('show');
     setTimeout(() => { el.textContent = 'Saved'; el.hidden = true; }, 250);
   }, 1500);
+}
+
+// ---------------------------------------------------------
+// Split to fit (Live Tabs only)
+//
+// Measures how many live-tab tiles fit in one column without scrolling
+// (based on the currently rendered cards, so it self-calibrates to this
+// window/display), then splits every open window that has more tabs than
+// that into balanced new windows. New windows are created unfocused and the
+// dashboard window is re-focused at the end, so the columns update in front
+// of the user instead of the browser jumping to a new window.
+// ---------------------------------------------------------
+
+// Look at the live-tab cards on screen and work out how many tiles fit in a
+// column before it needs to scroll. Returns a sensible fallback if nothing
+// measurable is rendered yet.
+function measureLiveColumnCapacity() {
+  const FALLBACK = 8;   // used only if measurement isn't possible
+  const MIN_FIT = 5;    // never target fewer than this per window
+
+  // Pick the card with the most tiles so we have real rows to measure.
+  let bestCard = null;
+  let bestTiles = [];
+  document.querySelectorAll('.live-tab-card').forEach(card => {
+    const tiles = card.querySelectorAll('.live-tab-tile');
+    if (tiles.length > bestTiles.length) {
+      bestTiles = tiles;
+      bestCard = card;
+    }
+  });
+  if (!bestCard || bestTiles.length === 0) return FALLBACK;
+
+  const list = bestCard.querySelector('.sites-list');
+  if (!list) return FALLBACK;
+
+  // Max height the card can grow to (CSS: calc(100vh - 180px), resolved to px).
+  let cardMax = parseFloat(getComputedStyle(bestCard).maxHeight);
+  if (!isFinite(cardMax) || cardMax <= 0) cardMax = window.innerHeight - 180;
+
+  // Measure the tile area's real offset from the card top via layout, so this
+  // already accounts for the card border, the header, and the list's padding
+  // without hard-coding any of them.
+  const listStyle = getComputedStyle(list);
+  const listPadTop = parseFloat(listStyle.paddingTop) || 0;
+  const listPadBottom = parseFloat(listStyle.paddingBottom) || 0;
+  const cardTop = bestCard.getBoundingClientRect().top;
+  const tileAreaTop = list.getBoundingClientRect().top + listPadTop;
+  const SAFETY = 6; // stay a hair conservative so we never spill into a scroll
+  const available = cardMax - (tileAreaTop - cardTop) - listPadBottom - SAFETY;
+
+  // Row stride: distance between consecutive tiles (includes drop indicators
+  // and any gap). Fall back to the tile's own height plus a hair when there's
+  // only one tile to look at.
+  const first = bestTiles[0];
+  const tileH = first.offsetHeight || 40;
+  let stride;
+  if (bestTiles.length >= 2) {
+    stride = bestTiles[1].getBoundingClientRect().top - first.getBoundingClientRect().top;
+  } else {
+    stride = tileH + 2;
+  }
+  if (!isFinite(stride) || stride <= 0) stride = tileH + 2;
+
+  // The last tile only needs its own height, not a full stride below it.
+  const capacity = Math.floor((available - tileH) / stride) + 1;
+  return Math.max(MIN_FIT, capacity);
+}
+
+// Split one live window (given its live category) into balanced windows of at
+// most `fit` tabs each. The first chunk stays in the original window; each
+// later chunk moves to a new unfocused window. Returns the number of new
+// windows created.
+async function splitLiveWindowToFit(cat, fit) {
+  const tabIds = (cat.sites || []).map(s => s.tabId).filter(id => id != null);
+  const count = tabIds.length;
+  if (count <= fit) return 0;
+
+  const numWindows = Math.ceil(count / fit);
+  const base = Math.floor(count / numWindows);
+  const extra = count % numWindows; // first `extra` windows get one more tab
+
+  const sizes = [];
+  for (let i = 0; i < numWindows; i++) sizes.push(base + (i < extra ? 1 : 0));
+
+  let idx = sizes[0]; // first chunk already lives in the original window
+  let created = 0;
+  for (let w = 1; w < numWindows; w++) {
+    const chunk = tabIds.slice(idx, idx + sizes[w]);
+    idx += sizes[w];
+    if (chunk.length === 0) continue;
+
+    const newWin = await chrome.windows.create({ tabId: chunk[0], focused: false });
+    if (chunk.length > 1) {
+      await chrome.tabs.move(chunk.slice(1), { windowId: newWin.id, index: -1 });
+    }
+    created++;
+  }
+  return created;
+}
+
+async function splitLiveTabsToFit() {
+  const btn = document.getElementById('splitToFitBtn');
+  if (btn) btn.disabled = true;
+
+  try {
+    // Remember which window holds the dashboard so we can keep it in front.
+    let dashboardWindowId = null;
+    try {
+      const currentWin = await chrome.windows.getCurrent();
+      dashboardWindowId = currentWin && currentWin.id;
+    } catch {}
+
+    // Measure against what's on screen right now, then refresh the underlying
+    // data so we split from an accurate, current snapshot.
+    const fit = measureLiveColumnCapacity();
+    await loadLiveTabs();
+
+    const cats = (liveTabsData && liveTabsData.categories) || [];
+    let newWindows = 0;
+    for (const cat of cats) {
+      newWindows += await splitLiveWindowToFit(cat, fit);
+    }
+
+    // Rebuild the Live Tabs view with the new window layout.
+    await loadLiveTabs();
+    renderAll();
+    DragDrop.init(handleDrop);
+
+    // Keep the dashboard in front. New windows are created unfocused, but when
+    // one is seeded from its source window's *active* tab, macOS can raise it a
+    // beat after the create call resolves, landing on top of a single refocus.
+    // So re-assert focus on the dashboard as the final step and once more just
+    // after, to win that race.
+    if (dashboardWindowId != null) {
+      const refocus = () => chrome.windows.update(dashboardWindowId, { focused: true }).catch(() => {});
+      await refocus();
+      setTimeout(refocus, 150);
+    }
+
+    if (newWindows > 0) {
+      showSplitFeedback(`Split into ${newWindows} new window${newWindows === 1 ? '' : 's'} (${fit}/window)`);
+    } else {
+      showSplitFeedback('Nothing to split');
+    }
+  } catch (err) {
+    console.error('Split to fit error:', err);
+    showSplitFeedback('Split failed');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// Test-mode helper: merge every open normal window into the dashboard's window,
+// so the splitter can be exercised repeatedly (Combine -> one big window ->
+// Split -> tidy columns). Emptied windows close themselves once their tabs move.
+async function consolidateAllWindows() {
+  const btn = document.getElementById('consolidateBtn');
+  if (btn) btn.disabled = true;
+
+  try {
+    // Merge into the dashboard's own window so it stays in front afterward.
+    let targetWindowId = null;
+    try {
+      const currentWin = await chrome.windows.getCurrent();
+      targetWindowId = currentWin && currentWin.id;
+    } catch {}
+
+    const windows = await chrome.windows.getAll({ populate: true });
+    if (targetWindowId == null) {
+      const firstNormal = windows.find(w => w.type === 'normal');
+      targetWindowId = firstNormal && firstNormal.id;
+    }
+    if (targetWindowId == null) {
+      showSplitFeedback('Nothing to combine');
+      return;
+    }
+
+    // Gather every tab from the other normal windows, in window order.
+    const moveIds = [];
+    let mergedWindows = 0;
+    windows.forEach(win => {
+      if (win.type !== 'normal' || win.id === targetWindowId) return;
+      const ids = (win.tabs || []).map(t => t.id).filter(id => id != null);
+      if (ids.length > 0) {
+        moveIds.push(...ids);
+        mergedWindows++;
+      }
+    });
+
+    if (moveIds.length === 0) {
+      showSplitFeedback('Only one window open');
+      return;
+    }
+
+    // Move them all to the end of the target window. Chrome closes the now-empty
+    // source windows automatically.
+    await chrome.tabs.move(moveIds, { windowId: targetWindowId, index: -1 });
+
+    // Rebuild the Live Tabs view, then keep the dashboard in front.
+    await loadLiveTabs();
+    renderAll();
+    DragDrop.init(handleDrop);
+    try { await chrome.windows.update(targetWindowId, { focused: true }); } catch {}
+
+    showSplitFeedback(`Combined ${mergedWindows} window${mergedWindows === 1 ? '' : 's'} into one`);
+  } catch (err) {
+    console.error('Consolidate error:', err);
+    showSplitFeedback('Combine failed');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// =========================================================
+// Session Snapshot (HTML export + restore) — UI glue.
+// Heavy lifting lives in js/snapshot.js (the Snapshot module).
+// =========================================================
+
+// Save all open windows/tabs to a self-contained HTML snapshot file.
+async function snapshotOpenTabs() {
+  const btn = document.getElementById('snapshotBtn');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await Snapshot.captureAndDownload();
+    if (res.windows === 0) {
+      showSplitFeedback('No open tabs to snapshot');
+    } else {
+      showSplitFeedback(`Snapshot saved (${res.windows} window${res.windows === 1 ? '' : 's'}, ${res.tabs} tabs)`);
+    }
+  } catch (err) {
+    console.error('Snapshot error:', err);
+    showSplitFeedback('Snapshot failed');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// Parsed snapshot currently loaded in the Restore modal.
+let restoreSnapshotData = null;
+
+function openRestoreFilePicker() {
+  const input = document.getElementById('restoreSnapshotFile');
+  input.value = ''; // allow re-selecting the same file
+  input.click();
+}
+
+function handleRestoreFileChosen(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      restoreSnapshotData = Snapshot.parseSnapshotFile(reader.result);
+      renderRestoreTree(restoreSnapshotData);
+      document.getElementById('restoreDedupe').checked = false;
+      document.getElementById('restoreModal').classList.add('is-open');
+      updateRestoreConfirmState();
+    } catch (err) {
+      Utils.alert('Could not read snapshot: ' + err.message);
+    }
+  };
+  reader.onerror = () => Utils.alert('Could not read the file.');
+  reader.readAsText(file);
+}
+
+// Map a Chrome tab-group color name to a display hex (for the swatches).
+function groupColorHex(color) {
+  const m = {
+    grey: '#5F6368', blue: '#1A73E8', red: '#D93025', yellow: '#F9AB00',
+    green: '#1E8E3E', pink: '#D01884', purple: '#9334E6', cyan: '#12B5CB', orange: '#E8710A'
+  };
+  return m[color] || '#5F6368';
+}
+
+// Human label for a snapshot window, from its most common domains.
+function windowSnapshotName(tabs) {
+  const seen = new Set();
+  const domains = [];
+  tabs.forEach(t => {
+    const d = (t.domain || '').replace(/^www\./, '');
+    if (d && !seen.has(d)) { seen.add(d); domains.push(d); }
+  });
+  if (domains.length === 0) return `Window (${tabs.length})`;
+  const shown = domains.slice(0, 2).join(', ');
+  return domains.length > 2 ? `${shown} & more` : shown;
+}
+
+function renderRestoreTree(data) {
+  const tree = document.getElementById('restoreTree');
+  const meta = document.getElementById('restoreMeta');
+  tree.innerHTML = '';
+
+  const totalTabs = data.windows.reduce((n, w) => n + Snapshot.orderedTabs(w).length, 0);
+  const when = data.timestamp ? new Date(data.timestamp).toLocaleString() : 'unknown time';
+  meta.textContent = `Snapshot from ${when}: ${data.windows.length} window${data.windows.length === 1 ? '' : 's'}, ${totalTabs} tab${totalTabs === 1 ? '' : 's'}. Choose what to restore (adds to what's already open):`;
+
+  data.windows.forEach(w => {
+    const tabs = Snapshot.orderedTabs(w);
+    const restorable = tabs.filter(t => Snapshot.isRestorableUrl(t.url)).length;
+    const skipped = tabs.length - restorable;
+
+    const winEl = document.createElement('div');
+    winEl.className = 'restore-window';
+
+    const head = document.createElement('label');
+    head.className = 'restore-window-head';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'restore-win-cb';
+    cb.checked = restorable > 0;
+    cb.disabled = restorable === 0;
+    cb.dataset.winId = String(w.id);
+    cb.addEventListener('change', updateRestoreConfirmState);
+
+    const title = document.createElement('span');
+    title.textContent = windowSnapshotName(tabs);
+
+    const winMeta = document.createElement('span');
+    winMeta.className = 'restore-win-meta';
+    let metaText = `${restorable} tab${restorable === 1 ? '' : 's'}`;
+    if (skipped > 0) metaText += `, ${skipped} can't reopen`;
+    const geo = (w.width && w.height) ? `, ${Math.round(w.width)}×${Math.round(w.height)}` : '';
+    winMeta.textContent = `(${metaText}${geo})`;
+
+    head.append(cb, title, winMeta);
+    winEl.appendChild(head);
+
+    // Group summary lines
+    const groupIds = Object.keys(w.groups || {});
+    if (groupIds.length > 0) {
+      const body = document.createElement('div');
+      body.className = 'restore-window-body';
+      groupIds.forEach(gid => {
+        const g = w.groups[gid];
+        const count = tabs.filter(t => String(t.groupId) === String(gid)).length;
+        const line = document.createElement('div');
+        line.className = 'restore-group-line';
+        const sw = document.createElement('span');
+        sw.className = 'restore-group-swatch';
+        sw.style.background = groupColorHex(g.color);
+        const label = document.createElement('span');
+        label.textContent = `${g.title || 'Group'} (${count})`;
+        line.append(sw, label);
+        body.appendChild(line);
+      });
+      winEl.appendChild(body);
+    }
+
+    tree.appendChild(winEl);
+  });
+}
+
+function getSelectedRestoreWindowIds() {
+  return Array.from(document.querySelectorAll('.restore-win-cb'))
+    .filter(c => c.checked)
+    .map(c => Number(c.dataset.winId));
+}
+
+function updateRestoreConfirmState() {
+  const btn = document.getElementById('restoreConfirmBtn');
+  if (!restoreSnapshotData) { btn.disabled = true; btn.textContent = 'Restore'; return; }
+  const selectedIds = getSelectedRestoreWindowIds();
+  const selectedWindows = restoreSnapshotData.windows.filter(w => selectedIds.includes(w.id));
+  const n = Snapshot.countRestorable(selectedWindows);
+  btn.disabled = n === 0;
+  btn.textContent = n === 0 ? 'Restore' : `Restore ${n} tab${n === 1 ? '' : 's'}`;
+}
+
+async function doRestore() {
+  if (!restoreSnapshotData) return;
+  const selectedIds = getSelectedRestoreWindowIds();
+  const skipOpenUrls = document.getElementById('restoreDedupe').checked;
+  const btn = document.getElementById('restoreConfirmBtn');
+  btn.disabled = true;
+  btn.textContent = 'Restoring…';
+  try {
+    const res = await Snapshot.restore(restoreSnapshotData, {
+      windowIds: selectedIds,
+      skipOpenUrls,
+      onProgress: (settled, total) => { btn.textContent = `Restoring… ${settled}/${total}`; }
+    });
+    closeModal('restoreModal');
+    let msg = `Restored ${res.restoredTabs} tab${res.restoredTabs === 1 ? '' : 's'} in ${res.restoredWindows} window${res.restoredWindows === 1 ? '' : 's'}`;
+    if (res.skippedUrls > 0) msg += ` (${res.skippedUrls} couldn't reopen)`;
+    showSplitFeedback(msg);
+  } catch (err) {
+    console.error('Restore error:', err);
+    Utils.alert('Restore failed: ' + err.message);
+    updateRestoreConfirmState();
+  }
 }
 
 // =========================================================
@@ -5338,7 +5743,7 @@ function bindGlobalEvents() {
   document.getElementById('sortTabsRecentBtn').addEventListener('click', sortTabsByRecent);
 
   // ---- Close all tabs ----
-  document.getElementById('closeAllTabsBtn').addEventListener('click', closeAllTabs);
+  document.getElementById('closeAllTabsBtn').addEventListener('click', promptCloseAllTabs);
 
   // ---- Search ----
   const searchInput = document.getElementById('searchInput');
@@ -5711,6 +6116,61 @@ function bindGlobalEvents() {
 
   // Header: Split window button
   document.getElementById('splitWindowBtn').addEventListener('click', () => splitCurrentWindow('splitWindowBtn'));
+
+  // Header: Split to fit (Live Tabs only) — split every crowded window so its
+  // column fits on screen without scrolling
+  document.getElementById('splitToFitBtn').addEventListener('click', splitLiveTabsToFit);
+
+  // Header: Combine (Live Tabs + Test Mode only) — merge all windows into one
+  document.getElementById('consolidateBtn').addEventListener('click', consolidateAllWindows);
+
+  // Header: Snapshot (Live Tabs only) — save all open windows/tabs to HTML
+  document.getElementById('snapshotBtn').addEventListener('click', snapshotOpenTabs);
+
+  // Close All Tabs: three-way "snapshot before closing?" prompt
+  document.getElementById('closeAllCancelBtn').addEventListener('click', () => {
+    document.getElementById('closeAllSnapshotModal').classList.remove('is-open');
+  });
+  document.getElementById('closeAllNoSnapBtn').addEventListener('click', async () => {
+    document.getElementById('closeAllSnapshotModal').classList.remove('is-open');
+    await performCloseAllTabs();
+  });
+  document.getElementById('closeAllSnapBtn').addEventListener('click', async () => {
+    const b = document.getElementById('closeAllSnapBtn');
+    b.disabled = true;
+    try {
+      await Snapshot.captureAndDownload();
+    } catch (err) {
+      console.error('Snapshot before close failed:', err);
+    }
+    b.disabled = false;
+    document.getElementById('closeAllSnapshotModal').classList.remove('is-open');
+    await performCloseAllTabs();
+  });
+
+  // Settings: Restore Session Snapshot
+  document.getElementById('restoreSnapshotBtn').addEventListener('click', openRestoreFilePicker);
+  document.getElementById('restoreSnapshotFile').addEventListener('change', handleRestoreFileChosen);
+  document.getElementById('restoreSelectAll').addEventListener('click', () => {
+    document.querySelectorAll('.restore-win-cb').forEach(c => { if (!c.disabled) c.checked = true; });
+    updateRestoreConfirmState();
+  });
+  document.getElementById('restoreClearAll').addEventListener('click', () => {
+    document.querySelectorAll('.restore-win-cb').forEach(c => { c.checked = false; });
+    updateRestoreConfirmState();
+  });
+  document.getElementById('restoreDedupe').addEventListener('change', updateRestoreConfirmState);
+  document.getElementById('restoreConfirmBtn').addEventListener('click', doRestore);
+  document.getElementById('restoreCancelBtn').addEventListener('click', () => closeModal('restoreModal'));
+
+  // Settings: Test mode toggle. Toggle the body class directly (don't call
+  // applySettings, which resets body.className and would drop live-tabs-active).
+  document.getElementById('testModeToggle').addEventListener('change', (e) => {
+    appData.settings.testMode = e.target.checked;
+    document.body.classList.toggle('test-mode-active', e.target.checked);
+    localSavePending++;
+    Storage.saveData(appData, Utils.flashSaveIndicator);
+  });
 
   // Settings: export JSON
   document.getElementById('exportBtn').addEventListener('click', () => {

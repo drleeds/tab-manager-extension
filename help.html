@@ -86,6 +86,17 @@
     }
     .tip strong { color: #4361ee; }
 
+    /* ----- Caution boxes ----- */
+    .warn {
+      margin: 16px 0;
+      padding: 14px 18px;
+      background: #fff5e6;
+      border-left: 4px solid #f59e0b;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+    .warn strong { color: #b45309; }
+
     /* ----- Back-to-top ----- */
     .back-top {
       display: inline-block; margin-top: 8px;
@@ -117,6 +128,7 @@
     <a href="#add-browser">Add from Browser</a>
     <a href="#settings">Settings</a>
     <a href="#birdseye">Bird&rsquo;s-Eye View</a>
+    <a href="#livetabs">Live Tabs</a>
     <a href="#keyboard">Keyboard Shortcuts</a>
   </nav>
 </div>
@@ -461,6 +473,19 @@
   <li><strong>Copy All URLs</strong> &mdash; Toggle this on to show a "Copy All" button in the settings that copies every URL from the current workspace to your clipboard.</li>
 </ul>
 
+<h3>Tab Splitter</h3>
+<p>Controls for the automatic tab-splitting feature, which breaks overcrowded browser windows into smaller ones. (This is separate from the <strong>Split</strong> button in <a href="#livetabs">Live Tabs</a>, which measures the fit to your screen automatically.)</p>
+<ul>
+  <li><strong>Max tabs per window</strong> &mdash; Windows with more tabs than this number (3&ndash;50, default 12) are split.</li>
+  <li><strong>Auto-split on new tabs</strong> &mdash; When on, opening a tab that pushes a window past the limit automatically splits it.</li>
+  <li><strong>Split Now</strong> &mdash; Manually split the current window using the number above.</li>
+</ul>
+
+<h3>Test Mode</h3>
+<ul>
+  <li><strong>Enable test mode</strong> &mdash; Adds a <strong>Combine</strong> button next to <strong>Split</strong> in Live Tabs that merges every open window into one. It is meant for trying out the splitter (combine everything into one window, then Split it back into tidy columns). Leave this off for normal use. See <a href="#livetabs">Live Tabs</a>.</li>
+</ul>
+
 <div class="tip">
   <strong>Tip:</strong> Regularly export your data as a JSON backup. This protects against accidental data loss and lets you transfer your setup to another computer.
 </div>
@@ -495,6 +520,70 @@
 
 <div class="tip">
   <strong>Tip:</strong> The Bird&rsquo;s-Eye View toggle state and collapsed workspace sections are saved automatically and persist across sessions.
+</div>
+
+<a class="back-top" href="#overview">&uarr; back to top</a>
+
+<!-- ==================== LIVE TABS ==================== -->
+<h2 id="livetabs">Live Tabs</h2>
+<p>
+  <strong>Live Tabs</strong> is a special workspace that mirrors your <strong>open browser windows and tabs</strong> in real time, instead of your saved sites. Each open window becomes a card (a column), and each tab inside it becomes a tile showing the page title and domain. It updates automatically as you open, close, move, and switch tabs.
+</p>
+<p>Unlike your regular workspaces, Live Tabs is a live view. Nothing here is saved to your data. It is a control panel for the tabs you have open right now.</p>
+
+<h3>Opening Live Tabs</h3>
+<p>Open the <strong>workspace selector</strong> in the header and choose <strong>Live Tabs</strong> (it always appears last in the list). To leave, pick any normal workspace from the same dropdown.</p>
+
+<h3>Reading the Cards</h3>
+<ul>
+  <li>Each <strong>window</strong> is a card. The card title is generated from the most common sites in that window (for example, "YouTube, Gmail &amp; 5 more"), and the badge shows how many tabs it holds.</li>
+  <li>The <strong>currently focused window</strong> is marked with a green dot and an accent-coloured edge.</li>
+  <li>The <strong>active tab</strong> in each window is highlighted, and pinned tabs are marked as pinned.</li>
+</ul>
+
+<h3>Working with Tabs</h3>
+<ul>
+  <li><strong>Click a tile</strong> to jump straight to that tab (its window comes forward and the tab becomes active).</li>
+  <li><strong>Hover a tile</strong> and click the <strong>&times;</strong> to close that tab.</li>
+  <li><strong>Drag a tile</strong> to reorder it within its window, or drag it onto another window&rsquo;s card to move it there.</li>
+  <li><strong>Drag a tile onto one of your saved categories</strong> (switch workspaces first) to <em>save</em> that tab as a bookmark.</li>
+  <li><strong>Right-click a tile</strong> for the full menu: switch to tab, close tab, move or copy to another window, move to top/bottom, pin/unpin, open in a new tab, and copy the URL.</li>
+</ul>
+
+<h3>Working with Windows</h3>
+<ul>
+  <li>Each window card has a <strong>focus button</strong> in its header to bring that window forward.</li>
+  <li><strong>Right-click a window&rsquo;s header</strong> for window actions: focus the window, open a new window, merge this window&rsquo;s tabs into another window, or close the window.</li>
+  <li>The dashed <strong>New Window</strong> card at the far end opens a fresh, empty browser window.</li>
+</ul>
+
+<h3>Select Mode in Live Tabs</h3>
+<p>The <strong>Select</strong> button works here too, but with tab-specific actions. Choose multiple tabs, then <strong>Close Selected Tabs</strong> to close them all at once, or <strong>Save to Category</strong> to bookmark them into one of your categories.</p>
+
+<h3>Search in Live Tabs</h3>
+<p>While you are on Live Tabs, the search box filters your <strong>open tabs</strong> (not your saved sites), so you can quickly find a tab among many windows.</p>
+
+<h3>Split &mdash; Fit Windows to Your Screen</h3>
+<p>
+  A <strong>Split</strong> button appears just to the right of the workspace selector, only while you are on Live Tabs. It takes every window that has more tabs than comfortably fit on screen and splits it into several smaller windows, so each column can be seen <strong>without scrolling</strong>.
+</p>
+<ul>
+  <li>The target size is <strong>measured to your screen</strong>. It works out how many tiles fit a column at your current window height, so taller displays keep more tabs per window and smaller ones keep fewer. There is no number to set.</li>
+  <li>Windows are <strong>balanced</strong> when they split (for example a very full window becomes two or three evenly sized windows), so you never end up with a stray window holding a single tab.</li>
+  <li>The <strong>dashboard stays in front</strong>. New windows open in the background and the Tab Manager window is brought back to the front, so you watch the new columns appear right where you are.</li>
+  <li>If everything already fits, Split does nothing and briefly shows <strong>"Nothing to split"</strong>. Windows that are already small enough are left alone.</li>
+</ul>
+
+<div class="tip">
+  <strong>Tip:</strong> Split is the quickest way to tidy up after a long browsing session. Switch to Live Tabs, glance at which windows are overflowing, and click <strong>Split</strong>.
+</div>
+
+<h3>Combine (Test Mode)</h3>
+<p>
+  When <strong>Test Mode</strong> is turned on in <a href="#settings">Settings</a>, a <strong>Combine</strong> button appears next to Split. It merges <em>every</em> open window into a single window. It exists mainly to try out Split: click <strong>Combine</strong> to gather everything into one crowded window, then <strong>Split</strong> to fan it back out into tidy columns.
+</p>
+<div class="warn">
+  <strong>Caution:</strong> Combine moves all of your open tabs into one window at once. Nothing is closed or lost, but it is a big rearrangement. Leave Test Mode off during normal use so the button stays out of the way.
 </div>
 
 <a class="back-top" href="#overview">&uarr; back to top</a>

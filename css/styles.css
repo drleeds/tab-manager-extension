@@ -2574,6 +2574,106 @@ a.icon-btn {
   display: none;
 }
 
+/* "Split to fit" and "Snapshot" buttons are Live Tabs only — hidden elsewhere */
+#splitToFitBtn,
+#snapshotBtn {
+  display: none;
+}
+.live-tabs-active #splitToFitBtn,
+.live-tabs-active #snapshotBtn {
+  display: inline-flex;
+}
+
+/* "Combine" button is Live Tabs + Test Mode only */
+#consolidateBtn {
+  display: none;
+}
+.live-tabs-active.test-mode-active #consolidateBtn {
+  display: inline-flex;
+}
+
+/* =========================================================
+   Restore Session Snapshot modal
+   ========================================================= */
+.modal-footer--wrap {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.restore-meta {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.restore-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.restore-dedupe {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text);
+  margin-left: auto;
+  cursor: pointer;
+}
+
+.restore-tree {
+  max-height: 50vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.restore-window {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.restore-window:last-child {
+  border-bottom: none;
+}
+
+.restore-window-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.restore-window-head .restore-win-meta {
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.restore-window-body {
+  margin: 6px 0 0 26px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.restore-group-line {
+  padding: 2px 0;
+}
+
+.restore-group-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
 /* Live tab card styling */
 .live-tab-card {
   border-left: 3px solid var(--border);
