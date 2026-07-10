@@ -50,7 +50,7 @@ A special ephemeral workspace (`LIVE_TABS_ID = '__live_tabs__'`) that mirrors al
 - **Each tab → a site tile** showing page title + domain, with click-to-switch behavior
 - **Tab event listeners** (`onCreated`, `onRemoved`, `onUpdated`, `onMoved`, `onAttached`, `onDetached`) auto-refresh the view with 500ms debounce
 - **Listeners are started/stopped** when entering/leaving the Live Tabs workspace via `startLiveTabsListeners()` / `stopLiveTabsListeners()`
-- **The newtab page itself is filtered out** using `chrome.runtime.getURL('')`
+- **The newtab page itself is filtered out** by `chrome.runtime.getURL('')` **and** by `NEW_TAB_URLS`. The origin check alone is not enough: because `chrome_url_overrides` claims the new tab page, Chrome reports the dashboard's own tabs as `chrome://newtab/`, not `chrome-extension://<id>/newtab.html`, so the dashboard used to list itself as a "New Tab" tile
 - **Search is scoped** — when on Live Tabs, search only searches live tabs, not saved categories
 - **Select mode works** — with "Close Selected Tabs" and "Save to Category" actions instead of Move/Delete
 - **Drag from Live Tabs to a regular category** = save that tab (creates a new site with fresh ID)

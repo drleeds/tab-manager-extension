@@ -25,6 +25,13 @@ let localSavePending = 0;
 
 // Live Tabs workspace
 const LIVE_TABS_ID = '__live_tabs__';
+// Every URL Chrome may report for a new tab page. All of them render this
+// extension's dashboard, since manifest chrome_url_overrides claims newtab.
+const NEW_TAB_URLS = new Set([
+  'chrome://newtab/',
+  'chrome://new-tab-page/',
+  'chrome://new-tab-page-third-party/'
+]);
 let liveTabsData = null;       // { categories: [...] } — ephemeral, never saved
 let liveTabsListeners = null;  // array of listener removers
 let liveTabsDragPaused = false; // true while dragging live tabs (suppress auto-refresh)
@@ -3654,8 +3661,13 @@ async function loadLiveTabs() {
     if (win.type !== 'normal') return;
 
     const validTabs = win.tabs.filter(t => {
-      // Filter out the Tab Manager Pro newtab page
-      if (t.url && t.url.startsWith(extensionOrigin)) return false;
+      if (!t.url) return true;
+      // Filter out the Tab Manager Pro newtab page. Because the extension
+      // overrides the new tab page, Chrome reports these tabs as chrome://newtab/
+      // rather than chrome-extension://<id>/newtab.html, so the origin check
+      // alone never matched and the dashboard listed itself.
+      if (t.url.startsWith(extensionOrigin)) return false;
+      if (NEW_TAB_URLS.has(t.url)) return false;
       return true;
     });
 
