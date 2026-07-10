@@ -108,6 +108,17 @@ Capture every open window/tab/group to a single self-contained, interactive HTML
 - **UI**: a **Snapshot** button in Live Tabs (`#snapshotBtn`, next to Split); a three-way **snapshot-before-close** prompt on the header close-all button (`#closeAllSnapshotModal`: Cancel / Close without snapshot / Snapshot & close — `closeAllTabs` was split into `promptCloseAllTabs` + `performCloseAllTabs`); and **Restore Session Snapshot** in Settings → Data (`#restoreModal`, a selective per-window tree with a "skip tabs already open" de-dupe option).
 - **Naming**: the pre-existing saved-sites "Export HTML" (`Storage.exportHtml`, exports categories) was relabeled "Export Saved Sites (HTML)" to avoid confusion with this open-tabs snapshot.
 
+#### Rejected alternative: suspender-style placeholder restore (considered 2026-07-10)
+Before optimizing the load-then-discard restore, a fundamentally different design was considered and deliberately rejected. Documented here because it *will* look like the obvious improvement to anyone reading `restore()` cold.
+
+**The technique** (used by tab-suspender extensions like The Great Suspender): instead of loading each page and discarding it, create every tab pointing at a local placeholder page — `suspended.html?url=<real>&title=<from snapshot>&favicon=<from snapshot>`. The placeholder renders instantly from the snapshot's own data and swaps to the real URL on click. This would make a 65-tab restore near-instant (vs the current ~30–50s measured), with zero network traffic, exact titles from the file (no SPA placeholder-title problem), and no login-redirect URLs baked in.
+
+**Why it was rejected:**
+1. **Extension lock-in.** Every unclicked restored tab is literally a page served by this extension. Remove the extension and they all become dead error pages. Sharper for an unpacked extension: Chrome derives the unpacked ID from the folder path, so loading the copy from a different directory (as happens on the second test machine) changes the ID and permanently kills every suspended tab from the old ID. Mark removes/reloads the extension routinely while testing — the exact triggering action. The Great Suspender's abandonment stranding users' tabs is this failure mode at scale, and it is precisely what the current design avoids: load-then-discard produces *real* tabs that survive extension removal, reload, and anything else.
+2. **Every URL-reading feature must see through the disguise.** Live Tabs tiles, `Snapshot.capture()`, copy-all-tabs, save-all-tabs, and dedupe all read `tab.url` and would need to unwrap placeholder URLs. Worse, the Live Tabs filter *excludes* extension-origin tabs (that's how the dashboard hides itself), so suspended tabs would silently vanish from Live Tabs. Capturing a half-suspended session would write placeholder URLs into the snapshot file unless capture unwraps too. Pervasive, easy to miss one, ecosystem-bug factory.
+
+**When to revisit:** only as an *optional* second restore mode ("instant restore"), never as a replacement for real-tabs restore, and only if restore time actually starts hurting. Estimated ~a day of careful work, mostly the unwrapping tax. The snapshot HTML file itself is unaffected by either design — it is plain data and always usable without the extension.
+
 ### Core Rendering Flow
 - `renderAll()` wipes `#categoriesGrid` innerHTML and rebuilds from scratch
 - **Bird's-eye mode** (not available on Live Tabs): builds `.workspace-section` wrappers, each with its own `.categories-grid`
@@ -128,7 +139,10 @@ A counter that prevents the `chrome.storage.onChanged` listener from triggering 
 - `skipScrollRestore` flag lets navigation code handle its own scrolling after a re-render
 
 ### Known Technical Debt
-The full DOM rebuild on every data change causes a brief favicon re-decode flicker. Fixing this would require surgical DOM updates (essentially a virtual DOM), which isn't worth the complexity for this project's scope.
+- The full DOM rebuild on every data change causes a brief favicon re-decode flicker. Fixing this would require surgical DOM updates (essentially a virtual DOM), which isn't worth the complexity for this project's scope.
+- **Snapshot restore runs in the dashboard page's JS context, not the service worker.** A large restore takes 30–50s (measured: ~50s for 65 tabs on the 8GB Mac, batching pending pages is memory/network-bound); closing or navigating the dashboard tab mid-restore kills it silently, half-done, with no resume. Browsing in *other* tabs while it runs is fine. The right fix is moving `Snapshot.restore()` into `background.js` (or at minimum warning "keep this tab open"). Deferred until it actually bites.
+- **Window batching uses a barrier, not a rolling pool.** `restore()` runs windows in fixed batches of `windowConcurrency` under `Promise.all`, so one slow window holds up its whole batch. A rolling pool (start the next window as each finishes) would shave maybe 10–20%. Minor; not worth it alone.
+- **Restore progress is cosmetic-only in places**: the counter only runs during the unload phase (tab creation shows no numbers), undercounts the total when "skip tabs already open" removes tabs, and stalls short if a window fails. Correctness is unaffected.
 
 ## Key Conventions
 
