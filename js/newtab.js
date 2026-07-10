@@ -61,6 +61,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   searchEl.value = '';
   document.getElementById('clearSearch').hidden = true;
 
+  showAppVersion();
+
   appData = await Storage.loadData();
   applySettings();
 
@@ -3645,6 +3647,17 @@ function addPickerItemsToCategory(catId, position) {
 
 function isLiveTabsActive() {
   return appData.settings.currentWorkspace === LIVE_TABS_ID;
+}
+
+// Show the version of the extension Chrome actually loaded, so "which code am I
+// running?" is answerable from Settings > About instead of the devtools console.
+// Read from the running manifest, never hardcoded, or it can silently drift.
+function showAppVersion() {
+  const el = document.getElementById('appVersion');
+  if (!el) return;
+  let version = 'unknown';
+  try { version = chrome.runtime.getManifest().version; } catch {}
+  el.textContent = version;
 }
 
 async function loadLiveTabs() {
