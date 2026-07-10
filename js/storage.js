@@ -137,6 +137,7 @@ const Storage = (() => {
 
             // Migrate to workspaces if needed
             migrateToWorkspaces(data);
+            healConvertedNotes(data);
 
             resolve(data);
           } else {
@@ -154,6 +155,7 @@ const Storage = (() => {
 
           // Migrate to workspaces if needed
           migrateToWorkspaces(data);
+          healConvertedNotes(data);
 
           resolve(data);
         } catch (e) {
@@ -191,6 +193,42 @@ const Storage = (() => {
           cat.workspaceId = defaultWorkspaceId;
         }
       });
+    }
+  }
+
+  // -------------------------------------------------------
+  // Heal sites that a former bug converted into notes.
+  //
+  // Until v1.1.0, editing a site could silently stamp type:'note' on it
+  // (the URL/Note toggle stayed clickable while editing; see CLAUDE.md).
+  // Real notes are always created with url:'', so an item that is a note
+  // AND carries a url is unambiguously a corrupted site. Because type is
+  // now immutable in the UI, there is no other way back for these records,
+  // and old exports or stores written while the bug was live would
+  // otherwise resurrect it forever. Runs on every load and import; it is
+  // idempotent and the next normal save persists the healed form.
+  // -------------------------------------------------------
+  function healConvertedNotes(data) {
+    if (!Array.isArray(data.categories)) return;
+    let healed = 0;
+    data.categories.forEach(cat => {
+      (cat.sites || []).forEach(s => {
+        if (s.type !== 'note' || !s.url) return;
+        delete s.type;
+        // A note's body lives in `text`; a site's annotation lives in `note`.
+        if (s.text) {
+          s.note = (s.note && s.note !== s.text) ? s.note + '\n' + s.text : s.text;
+          delete s.text;
+        }
+        if (!s.name) {
+          try { s.name = new URL(s.url).hostname.replace(/^www\./, ''); }
+          catch { s.name = s.url; }
+        }
+        healed++;
+      });
+    });
+    if (healed > 0) {
+      console.info(`Tab Manager: healed ${healed} site(s) a former bug had converted to notes.`);
     }
   }
 
@@ -348,6 +386,8 @@ const Storage = (() => {
       tabSplitAutoSplit: typeof s.tabSplitAutoSplit === 'boolean' ? s.tabSplitAutoSplit : defaults.tabSplitAutoSplit,
       testMode: typeof s.testMode === 'boolean' ? s.testMode : defaults.testMode
     };
+
+    healConvertedNotes(data);
 
     return data;
   }
