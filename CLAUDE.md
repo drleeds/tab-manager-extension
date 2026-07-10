@@ -29,6 +29,18 @@ appData = {
 }
 ```
 
+**Where the data actually lives.** `appData` is stored in `chrome.storage.local` under the key `tabManagerData`. It is **not** in the extension folder. Consequences that bite:
+
+- **Copying the extension folder to another machine copies the program, not the data.** The new install opens empty. `Settings > Data > Export JSON` / `Import` is the only transport.
+- **Removing an unpacked extension deletes its store.** Reloading it afterwards gives you a fresh, empty `appData`. Export first.
+- **Each machine and each Chrome profile has an independent store**, and they diverge the moment a site is added on one of them.
+- Not `chrome.storage.sync`, deliberately: sync caps at ~100KB total and 8KB per item, and sites carry favicons as data URLs, so writes would start failing silently.
+
+**Item types.** A site has no `type`; a note has `type: 'note'`. A note also carries `text` (its body); a site carries `note` (an annotation on the site). Two different fields, easily confused — see the type-immutability convention below.
+
+```
+```
+
 ### Live Tabs Workspace
 A special ephemeral workspace (`LIVE_TABS_ID = '__live_tabs__'`) that mirrors all open browser windows in real time:
 
@@ -88,7 +100,7 @@ Capture every open window/tab/group to a single self-contained, interactive HTML
 - **`generateHTML(data)` is ported verbatim** from the standalone "Tab Snapshot" extension (HTML export only; its Markdown path was intentionally dropped). Treat it as a black box: it takes a snapshot object (with `tabsByGroup` as a **Map**, which it requires) and returns a ~1500-line HTML string with embedded CSS, the data as JSON, and inline sort/search/notes JS. Do not hand-edit it; re-port from source if it must change.
 - **Capture** (`Snapshot.capture()`) does its own `chrome.windows.getAll` + `chrome.tabGroups.query` (not `liveTabsData` — it needs richer fields), adds **window geometry** (`left/top/width/height/state`) and a `schemaVersion`, and excludes the dashboard's own new-tab page.
 - **Restore payload**: `captureAndDownload()` injects a clean `<script type="application/json" id="tabmgr-snapshot">` block before `</body>`, with `<` escaped to `<` so a `</script>` inside any title/URL can't break the file. `parseSnapshotFile()` reads that block via `DOMParser`. The ported display embedding is hardened the same way (one-line `.replace(/</g,'<')` on `dataJson`).
-- **Restore** (`Snapshot.restore(data, {windowIds, discardThreshold=25, skipOpenUrls, commitTimeoutMs=10000, onProgress})`) is **non-destructive** — it only creates new windows, never touches what's open. It recreates windows (with geometry, unless a non-normal `state` forces geometry to be applied after), tabs in index order, pinned/active state, and tab groups (name/color/membership), skips unrestorable URLs (`chrome://` etc. — only `https?|ftp|file` are recreated), unloads tabs when the total exceeds `discardThreshold`, and re-focuses the dashboard at the end.
+- **Restore** (`Snapshot.restore(data, {windowIds, discardThreshold=25, skipOpenUrls, commitTimeoutMs=8000, titleQuietMs=700, onProgress})`) is **non-destructive** — it only creates new windows, never touches what's open. It recreates windows (with geometry, unless a non-normal `state` forces geometry to be applied after), tabs in index order, pinned/active state, and tab groups (name/color/membership), skips unrestorable URLs (`chrome://` etc. — only `https?|ftp|file` are recreated), unloads tabs when the total exceeds `discardThreshold`, and re-focuses the dashboard at the end.
 - **Never `chrome.tabs.discard()` a tab that has not committed its navigation.** `chrome.tabs.create({url})` resolves before the page commits, and a tab discarded in that window is frozen permanently with empty `url`, `title`, `favIconUrl` **and `pendingUrl`** — the extensions API can then tell you nothing about it but its id, window and index, so Live Tabs renders it as a `?` tile with no name. This is deterministic, not a race: in a 65-tab restore, all 52 non-active tabs were destroyed and only the 13 active tabs (one per window, skipped by the discard loop) survived. A tab discarded *after* committing keeps its url/title/favicon, which is how Chrome's own Memory Saver works.
 - **Nor discard on the first title.** SPAs (Gmail, Claude, Ads Manager) paint a placeholder title and swap in the real one a beat later; the favicon lands later still. Discarding on first title yields four tabs all named "Gmail" and six with no favicon (measured). `waitForSettledTitle()` waits for `status: 'complete'` plus `titleQuietMs` (700ms) of no title/favicon change, capped at `commitTimeoutMs` (8s). Per-window waits run under one `Promise.all` so a hung page can't restart the timeout for its neighbours. Before discarding, `restore()` re-reads the tab and skips any with an empty `url` — leaving it loaded beats freezing it blank.
 - **Consequence**: a large restore now genuinely loads each page once and takes tens of seconds, reported through `onProgress`. It also bakes in redirects (a session-expired tab discards as its login page). Both are accepted costs of having identifiable tabs.
@@ -119,6 +131,9 @@ The full DOM rebuild on every data change causes a brief favicon re-decode flick
 
 ## Key Conventions
 
+- **An item's `type` is immutable after creation.** The URL/Note toggle in the site modal applies only when *adding*. `openSiteModal()` hides it when editing, and `saveSite()` reads the stored `site.type` rather than the modal's state. A site can never become a note, or a note a site. To change kind, delete and recreate.
+- **Never infer persistent state from DOM visibility.** `saveSite()` used to do `const isNoteMode = !noteFields.hidden`, which let a styling bug rewrite user data (see below). If a value decides what gets written to storage, read it from storage, not from the page.
+- **`[hidden]` loses to any author `display` rule.** The UA stylesheet's `[hidden] { display: none }` is beaten by e.g. `.site-type-toggle { display: flex }`, so `el.hidden = true` sets the attribute but the element stays visible. This shipped a data-loss bug: the URL/Note toggle stayed clickable while editing a site, and clicking Note stamped `type: 'note'` on it and overwrote its `name`. Every class that sets `display` **and** gets hidden from JS needs its own `[hidden] { display: none }` rule. The stylesheet has seven of these; check for one before relying on `.hidden`.
 - **No framework** — vanilla JS, vanilla CSS, no build step
 - **`'use strict'`** at the top of every JS file
 - **IDs use** `Utils.generateId()` (timestamp + random base36)
