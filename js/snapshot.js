@@ -1835,6 +1835,7 @@ const Snapshot = (function () {
       skipOpenUrls = false,
       commitTimeoutMs = 8000,    // hard cap on waiting for any one tab to load
       titleQuietMs = 700,        // how long a title must hold still to count as final
+      windowConcurrency = 4,     // how many windows restore (and load) at once
       onProgress = null          // (settled, total) => void, during the unload pass
     } = options;
 
@@ -1855,17 +1856,18 @@ const Snapshot = (function () {
 
     const result = {
       restoredWindows: 0, restoredTabs: 0, skippedUrls: 0, skippedGroups: 0,
-      discardedTabs: 0, leftLoaded: 0
+      discardedTabs: 0, leftLoaded: 0, failedWindows: 0
     };
     let settled = 0;
 
-    for (const w of selected) {
+    // Restore one snapshot window: create it, fill it, group it, then unload it.
+    async function restoreWindow(w) {
       const ordered = orderedTabs(w).filter(t => {
         if (!isRestorableUrl(t.url)) { result.skippedUrls++; return false; }
         if (skipOpenUrls && openUrls.has(t.url)) return false;
         return true;
       });
-      if (ordered.length === 0) continue;
+      if (ordered.length === 0) return;
 
       // Create the window from the first tab, honoring geometry when possible.
       const first = ordered[0];
@@ -1985,9 +1987,33 @@ const Snapshot = (function () {
       result.restoredTabs += created.length;
     }
 
+    // Restore several windows at a time. Each window spends most of its life
+    // waiting for pages to load, so doing them strictly one after another means
+    // 13 windows x ~8s = ~100s of mostly idle waiting. Batching overlaps those
+    // waits. The batch size caps how many pages load at once, which is what the
+    // discard threshold was protecting against in the first place.
+    for (let i = 0; i < selected.length; i += windowConcurrency) {
+      const batch = selected.slice(i, i + windowConcurrency);
+      await Promise.all(batch.map(w =>
+        restoreWindow(w).catch(err => {
+          // One bad window must not abandon the windows still queued behind it.
+          console.error('Snapshot: window failed to restore', w.id, err);
+          result.failedWindows++;
+        })
+      ));
+    }
+
     // Keep the dashboard in front so the user watches from where they are.
+    // macOS can raise a newly created window a beat after `create` resolves, so
+    // re-assert focus once more after a short delay (same race the Split button
+    // hits).
     if (dashboardWindowId != null) {
-      try { await chrome.windows.update(dashboardWindowId, { focused: true }); } catch {}
+      const focusDashboard = async () => {
+        try { await chrome.windows.update(dashboardWindowId, { focused: true }); } catch {}
+      };
+      await focusDashboard();
+      await new Promise(r => setTimeout(r, 150));
+      await focusDashboard();
     }
 
     return result;

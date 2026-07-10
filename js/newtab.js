@@ -4622,6 +4622,7 @@ async function doRestore() {
     closeModal('restoreModal');
     let msg = `Restored ${res.restoredTabs} tab${res.restoredTabs === 1 ? '' : 's'} in ${res.restoredWindows} window${res.restoredWindows === 1 ? '' : 's'}`;
     if (res.skippedUrls > 0) msg += ` (${res.skippedUrls} couldn't reopen)`;
+    if (res.failedWindows > 0) msg += `; ${res.failedWindows} window${res.failedWindows === 1 ? '' : 's'} failed`;
     showSplitFeedback(msg);
   } catch (err) {
     console.error('Restore error:', err);
